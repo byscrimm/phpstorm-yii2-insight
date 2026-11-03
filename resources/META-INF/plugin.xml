@@ -118,6 +118,8 @@
         <completion.contributor language="PHP"
                                 implementationClass="io.github.byscrimm.yii2insight.database.QueryAliasCompletionContributor"/>
         <completion.contributor language="PHP"
+                                implementationClass="io.github.byscrimm.yii2insight.database.ArrayRowCompletionContributor"/>
+        <completion.contributor language="PHP"
                                 implementationClass="io.github.byscrimm.yii2insight.database.ParamsCompletionContributor"/>
         <completion.contributor language="PHP"
                                 implementationClass="io.github.byscrimm.yii2insight.forms.FieldAttributesCompletionContributor"/>
