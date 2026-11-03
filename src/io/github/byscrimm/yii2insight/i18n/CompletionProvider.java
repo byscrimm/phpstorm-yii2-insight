@@ -48,8 +48,8 @@ class CompletionProvider extends com.intellij.codeInsight.completion.CompletionP
     }
 
     private void fillCategories(PhpPsiElement element, CompletionResultSet result) {
-        for (PsiElement category : Util.getCategories(element)) {
-            result.addElement(new CategoryLookupElement(category));
+        for (java.util.Map.Entry<String, PsiElement> category : Util.getCategories(element).entrySet()) {
+            result.addElement(new CategoryLookupElement(category.getValue(), category.getKey()));
         }
     }
 

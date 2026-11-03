@@ -14,6 +14,7 @@ import io.github.byscrimm.yii2insight.relations.*;
 import io.github.byscrimm.yii2insight.widgetsconfig.*;
 import io.github.byscrimm.yii2insight.views.util.RenderParameters;
 import io.github.byscrimm.yii2insight.configurations.ConfigEntries;
+import io.github.byscrimm.yii2insight.i18n.*;
 import java.util.*;
 
 /** Real PhpStorm PHP parser/PSI in IntelliJ's Core test environment. No IDE UI or full index. */
@@ -66,7 +67,7 @@ public final class PhpPsiRegressionTest {
             project.registerService(PhpProjectSharedConfiguration.class,new PhpProjectSharedConfiguration());
             project.registerService(com.intellij.pom.tree.TreeAspect.class,new com.intellij.pom.tree.TreeAspect());
             project.registerService(com.intellij.pom.PomModel.class,new com.intellij.pom.core.impl.PomModelImpl(project));
-            arguments(); modelsAndRelations(); contexts(); references(); arrayMode(); widgets(); widgetCallbacks(); queryAliases(); arrayRows(); renderParameters(); configEntries(); incomplete();
+            arguments(); modelsAndRelations(); contexts(); references(); arrayMode(); widgets(); widgetCallbacks(); queryAliases(); arrayRows(); renderParameters(); configEntries(); routesAndMessages(); incomplete();
             System.out.println("PASS: "+checks+" real PHP PSI regression checks");
         } finally { Disposer.dispose(disposable); }
     }
@@ -591,8 +592,63 @@ public final class PhpPsiRegressionTest {
         eq("singleton without definition maps to itself", "\\app\\Clock", entries.get(ConfigEntries.DEFINITION + "\\app\\Clock"));
         eq("unrelated set call", null, entries.get(ConfigEntries.DEFINITION + "\\app\\X"));
     }
+    private static String messageProblems(String code) {
+        var problems = MessageParametersInspection.problems(TranslationCall.of(call(php(code),"t")));
+        return problems == null ? null : "missing=" + problems.missing() + " unused=" + problems.unused().keySet();
+    }
+    private static void routesAndMessages() {
+        php("""
+            namespace yii\\rest;
+            class Controller {}
+            class ActiveController extends Controller {
+                public function actions() { return ['index' => ['class' => 'yii\\\\rest\\\\IndexAction'], 'view' => ['class' => ViewAction::class], 'delete' => ['class' => DeleteAction::class]]; }
+            }
+            """);
+        php("""
+            namespace api;
+            class UserController extends \\yii\\rest\\ActiveController {
+                public function actions() {
+                    $actions = parent::actions();
+                    unset($actions['delete']);
+                    $actions['index']['prepareDataProvider'] = [$this, 'prepare'];
+                    $actions['export'] = ['class' => ExportAction::class];
+                    return $actions;
+                }
+            }
+            class PlainController extends \\yii\\rest\\ActiveController {}
+            class DynamicController extends \\yii\\rest\\ActiveController {
+                public function actions() { $actions = parent::actions(); $actions[$id] = []; return $actions; }
+            }
+            """);
+        ControllerActions.Classes lookup = fqn -> classes.containsKey(fqn) ? List.of(classes.get(fqn)) : List.of();
+        eq("parent actions adjusted", "{index=yii\\rest\\IndexAction, view=\\yii\\rest\\ViewAction, export=\\api\\ExportAction}", ControllerActions.of(classes.get("\\api\\UserController"), lookup).toString());
+        eq("inherited actions()", List.of("index","view","delete"), List.copyOf(ControllerActions.of(classes.get("\\api\\PlainController"), lookup).keySet()));
+        eq("dynamic action id stays unknown", Map.of(), ControllerActions.of(classes.get("\\api\\DynamicController"), lookup));
+        var entries = config("return ['language' => 'ru-RU', 'controllerMap' => ['migrate' => ['class' => \\yii\\console\\controllers\\MigrateController::class], 'dyn' => $x], 'components' => ['i18n' => ['translations' => ['app*' => ['class' => \\yii\\i18n\\PhpMessageSource::class, 'basePath' => '@app/messages', 'fileMap' => ['app' => 'app.php', 'app/error' => 'error.php']], 'db*' => ['class' => \\yii\\i18n\\DbMessageSource::class], 'plain' => ['basePath' => __DIR__ . '/../messages']]]]];");
+        eq("controllerMap entry", "\\yii\\console\\controllers\\MigrateController", entries.get(ConfigEntries.CONTROLLER + "migrate"));
+        eq("dynamic controllerMap entry", null, entries.get(ConfigEntries.CONTROLLER + "dyn"));
+        eq("translation source with fileMap", "@app/messages\u0001app=app.php\u0001app/error=error.php", entries.get(ConfigEntries.TRANSLATION + "app*"));
+        eq("non-file message source skipped", null, entries.get(ConfigEntries.TRANSLATION + "db*"));
+        eq("static basePath", "/app/frontend/messages", entries.get(ConfigEntries.TRANSLATION + "plain"));
+        eq("application language", "ru-RU", entries.get(ConfigEntries.LANGUAGE));
+        eq("nested language is not the application language", null, config("return ['modules' => ['x' => ['language' => 'de']]];").get(ConfigEntries.LANGUAGE));
+        var sources = List.of(new TranslationSources.Source("app*", null, Map.of()), new TranslationSources.Source("app/admin*", null, Map.of()), new TranslationSources.Source("app", null, Map.of()));
+        eq("exact category wins", "app", TranslationSources.match(sources, "app").pattern());
+        eq("longest prefix pattern", "app/admin*", TranslationSources.match(sources, "app/admin/users").pattern());
+        eq("prefix pattern", "app*", TranslationSources.match(sources, "app/error").pattern());
+        eq("unmatched category", null, TranslationSources.match(sources, "yii"));
+        eq("placeholders match", "missing=[] unused=[]", messageProblems("Yii::t('app', 'Hello {name}', ['name' => $n]);"));
+        eq("missing and unused", "missing=[count] unused=[extra]", messageProblems("Yii::t('app', '{name}: {count, plural, one{# item} other{# items}}', ['name' => 1, 'extra' => 2]);"));
+        eq("positional parameters", "missing=[] unused=[]", messageProblems("Yii::t('app', '{0} of {1}', [$a, $b]);"));
+        eq("no params for placeholder", "missing=[name] unused=[]", messageProblems("Yii::t('app', 'Hello {name}');"));
+        eq("named message argument", "missing=[] unused=[x]", messageProblems("Yii::t(message: 'Plain', params: ['x' => 1], category: 'app');"));
+        eq("params in variable", null, messageProblems("Yii::t('app', 'Hello {name}', $params);"));
+        eq("dynamic key", null, messageProblems("Yii::t('app', 'Hello {name}', [$key => 1]);"));
+        eq("interpolated message", null, messageProblems("Yii::t('app', \"Hello $who {name}\", []);"));
+        eq("unbalanced message", null, messageProblems("Yii::t('app', 'Hello {name', []);"));
+    }
     private static void incomplete() {
-        for (String code:List.of("$x->with('","$x->with(['orders' =>", "$this->hasMany(", "$this->render(params:","$x->joinWith(['orders.", "User::find()->joinWith(['orders' => function($q) { $q->alias(", "User::find()->where(['and', ['", "$r = User::find()->asArray()->one(); $r['", "foreach (User::find()->select(['id' =>", "return ['components' => require __DIR__ .", "return ['container' => ['definitions' => [","$a=$a; $a->with('x');", "\\yii\\grid\\GridView::widget(['columns'=>[['attribute'=>'", "\\yii\\widgets\\DetailView::widget(['model'=>new", "\\yii\\grid\\GridView::widget(['columns'=>[['value'=>fn($row)=>")) {
+        for (String code:List.of("$x->with('","$x->with(['orders' =>", "$this->hasMany(", "$this->render(params:","$x->joinWith(['orders.", "User::find()->joinWith(['orders' => function($q) { $q->alias(", "User::find()->where(['and', ['", "$r = User::find()->asArray()->one(); $r['", "foreach (User::find()->select(['id' =>", "return ['components' => require __DIR__ .", "return ['container' => ['definitions' => [", "Yii::t('app', 'Hello {", "Yii::t('app', 'x', [","$a=$a; $a->with('x');", "\\yii\\grid\\GridView::widget(['columns'=>[['attribute'=>'", "\\yii\\widgets\\DetailView::widget(['model'=>new", "\\yii\\grid\\GridView::widget(['columns'=>[['value'=>fn($row)=>")) {
             var file=php(code);
             for (var str:PsiTreeUtil.findChildrenOfType(file,StringLiteralExpression.class)) {
                 RelationContext.of(str);
@@ -604,6 +660,7 @@ public final class PhpPsiRegressionTest {
             for (var ref:PsiTreeUtil.findChildrenOfType(file,MethodReference.class)) resolver.models(ref.getClassReference());
             for (var access:PsiTreeUtil.findChildrenOfType(file,ArrayAccessExpression.class)) new ArrayRows(resolver).row(access.getValue());
             ConfigEntries.of(file, "/app/config");
+            for (var t:PsiTreeUtil.findChildrenOfType(file,MethodReference.class)) { var tc = TranslationCall.of(t); if (tc != null) MessageParametersInspection.problems(tc); }
             eq("incomplete PHP handled: "+code,true,true);
         }
     }
