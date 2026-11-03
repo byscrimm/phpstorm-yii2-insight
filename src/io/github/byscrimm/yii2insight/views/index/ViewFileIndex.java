@@ -1,6 +1,5 @@
 package io.github.byscrimm.yii2insight.views.index;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.indexing.*;
 import com.intellij.util.io.DataExternalizer;
@@ -10,7 +9,6 @@ import com.jetbrains.php.lang.PhpFileType;
 
 
 import io.github.byscrimm.yii2insight.views.entities.ViewInfo;
-import io.github.byscrimm.yii2insight.views.entities.ViewResolve;
 import io.github.byscrimm.yii2insight.views.util.ViewUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -60,7 +58,7 @@ public class ViewFileIndex extends FileBasedIndexExtension<String, ViewInfo> {
 
     @Override
     public int getVersion() {
-        return 34;
+        return 35;
     }
 
     @NotNull
@@ -79,32 +77,13 @@ public class ViewFileIndex extends FileBasedIndexExtension<String, ViewInfo> {
         @NotNull
         public Map<String, ViewInfo> map(@NotNull final FileContent inputData) {
 
-            final Project project = inputData.getProject();
-
-            ViewResolve resolve = ViewUtil.resolveView(inputData.getFile(), project);
-            if (resolve == null) {
-                return Collections.emptyMap();
-            }
-
-            final String absolutePath = inputData.getFile().getPath();
-
-            Map<String, ViewInfo> map = new HashMap<>();
+            // Content-only: settings-dependent view keys are resolved at query time (ViewFiles).
             ViewInfo viewInfo = new ViewInfo(inputData);
-            viewInfo.application = resolve.application;
-            viewInfo.theme = resolve.theme;
+            viewInfo.application = "";
+            viewInfo.theme = "";
             viewInfo.parameters = ViewUtil.getPhpViewVariables(inputData.getPsiFile());
-
-            map.put(resolve.key, viewInfo);
-            if (resolve.key.startsWith("@app/modules/") && !resolve.relativePath.startsWith("/modules/")) {
-                map.put("@app/views/modules" + resolve.key.substring(12), viewInfo);
-                //System.out.println("ViewDataIndexer.map > " + absolutePath + " => @app/views/modules" + resolve.key.substring(12));
-            }
-
-            if (resolve.key.startsWith("@app/widgets/") && !resolve.relativePath.startsWith("/widgets/")) {
-                map.put("@app/views/widgets" + resolve.key.substring(12), viewInfo);
-                //System.out.println("ViewDataIndexer.map > " + absolutePath + " => @app/views/widgets" + resolve.key.substring(12));
-            }
-
+            Map<String, ViewInfo> map = new HashMap<>();
+            map.put(inputData.getFile().getName(), viewInfo);
             return map;
         }
     }

@@ -1,5 +1,7 @@
 package io.github.byscrimm.yii2insight.views.inspections;
 
+import io.github.byscrimm.yii2insight.views.util.RenderParameters;
+
 import com.intellij.codeInspection.LocalQuickFix;
 import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.openapi.project.Project;
@@ -45,7 +47,10 @@ class UnusedParametersLocalQuickFix implements LocalQuickFix {
     public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor descriptor) {
         PsiElement viewParameters = descriptor.getPsiElement();
         if (viewParameters instanceof MethodReference) {
-            viewParameters = ((MethodReference) viewParameters).getParameters()[1];
+            viewParameters = RenderParameters.of((MethodReference) viewParameters).argument();
+            if (viewParameters == null) {
+                return;
+            }
         }
 
         if (myUnusedParams != null) {
@@ -53,7 +58,7 @@ class UnusedParametersLocalQuickFix implements LocalQuickFix {
             if (viewParameters instanceof ArrayCreationExpression) {
                 final ArrayCreationExpression params = (ArrayCreationExpression) viewParameters;
                 for (ArrayHashElement element : params.getHashElements()) {
-                    if (element.getKey() != null) {
+                    if (element.getKey() instanceof StringLiteralExpression) {
                         final String key = ((StringLiteralExpression) element.getKey()).getContents();
                         if (myUnusedParams.contains(key)) {
                             unused.add(element);
@@ -65,11 +70,7 @@ class UnusedParametersLocalQuickFix implements LocalQuickFix {
                 }
 
                 if (!params.getHashElements().iterator().hasNext()) {
-                    if (params.getPrevSibling() instanceof PsiWhiteSpace) {
-                        params.getPrevSibling().delete();
-                    }
-                    params.getPrevSibling().delete();
-                    params.delete();
+                    RenderParameters.deleteArgument(params);
                 }
             }
             if (viewParameters instanceof FunctionReference) {
@@ -85,11 +86,7 @@ class UnusedParametersLocalQuickFix implements LocalQuickFix {
                 }
             }
         } else {
-            if (viewParameters.getPrevSibling() instanceof PsiWhiteSpace) {
-                viewParameters.getPrevSibling().delete();
-            }
-            viewParameters.getPrevSibling().delete();
-            viewParameters.delete();
+            RenderParameters.deleteArgument(viewParameters);
         }
     }
 }

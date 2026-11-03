@@ -1,5 +1,7 @@
 package io.github.byscrimm.yii2insight.views.inspections;
 
+import io.github.byscrimm.yii2insight.views.util.RenderParameters;
+
 import com.intellij.codeInspection.LocalQuickFix;
 import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.openapi.project.Project;
@@ -47,11 +49,7 @@ class UnusedParameterLocalQuickFix implements LocalQuickFix {
             PsiUtil.deleteArrayElement(item);
 
             if (!params.getHashElements().iterator().hasNext()) {
-                if (params.getPrevSibling() instanceof PsiWhiteSpace) {
-                    params.getPrevSibling().delete();
-                }
-                params.getPrevSibling().delete();
-                params.delete();
+                RenderParameters.deleteArgument(params);
             }
         }
         if (context instanceof ParameterList && context.getParent() instanceof FunctionReference) {
@@ -60,7 +58,7 @@ class UnusedParameterLocalQuickFix implements LocalQuickFix {
                 PsiUtil.deleteFunctionParam(item);
 
                 if (functionReference.getParameters().length == 0) {
-                    PsiUtil.deleteFunctionParam(functionReference);
+                    RenderParameters.deleteArgument(functionReference);
                 }
             }
         }

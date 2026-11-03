@@ -8,11 +8,9 @@ import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.refactoring.RefactoringSettings;
 import com.intellij.refactoring.listeners.RefactoringElementListener;
 import com.intellij.refactoring.rename.RenamePsiFileProcessor;
-import com.intellij.util.indexing.FileBasedIndex;
 import com.jetbrains.php.lang.psi.PhpFile;
 import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
 import io.github.byscrimm.yii2insight.utils.Yii2InsightSettings;
-import io.github.byscrimm.yii2insight.views.index.ViewFileIndex;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,7 +66,6 @@ public class RenameViewProcessor extends RenamePsiFileProcessor {
                 }
             }
 
-            FileBasedIndex.getInstance().requestRebuild(ViewFileIndex.identity);
         };
     }
 }

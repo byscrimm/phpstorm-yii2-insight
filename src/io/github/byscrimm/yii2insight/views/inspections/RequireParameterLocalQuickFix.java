@@ -1,5 +1,9 @@
 package io.github.byscrimm.yii2insight.views.inspections;
 
+import io.github.byscrimm.yii2insight.common.PhpArguments;
+import io.github.byscrimm.yii2insight.views.util.RenderParameters;
+import java.util.Arrays;
+
 import com.intellij.codeInsight.template.Template;
 import com.intellij.codeInsight.template.TemplateManager;
 import com.intellij.codeInspection.LocalQuickFix;
@@ -49,24 +53,28 @@ class RequireParameterLocalQuickFix implements LocalQuickFix {
 
     @Override
     public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor descriptor) {
-        ParameterList parameterList = ((MethodReference) descriptor.getPsiElement()).getParameterList();
+        final MethodReference call = (MethodReference) descriptor.getPsiElement();
+        final ParameterList parameterList = call.getParameterList();
         if (parameterList == null) {
             return;
         }
 
-        PsiElement[] parameters = parameterList.getParameters();
-        if (parameters.length == 1 || parameters[1] instanceof PsiErrorElement) {
-            ArrayCreationExpression params = PhpPsiElementFactory.createFromText(project, ArrayCreationExpression.class, "[]");
+        PsiElement params = RenderParameters.of(call).argument();
+        if (params == null) {
+            // Append the argument to the existing text so other arguments and comments stay as written.
+            final boolean named = Arrays.stream(call.getParameters()).anyMatch(argument -> PhpArguments.name(argument) != null);
+            final String text = parameterList.getText().stripTrailing();
+            final String separator = text.isEmpty() || text.endsWith(",") ? "" : ", ";
+            final ParameterList replacement = PhpPsiElementFactory.createFromText(project, ParameterList.class,
+                    "f(" + text + separator + (named ? "params: []" : "[]") + ");");
+            if (replacement == null) {
+                return;
+            }
+            parameterList.replace(replacement);
+            params = RenderParameters.of(call).argument();
             if (params == null) {
                 return;
             }
-            if (parameters.length == 1) {
-                parameterList.add(PhpPsiElementFactory.createComma(project));
-            } else {
-                parameterList.deleteChildRange(parameters[1], parameters[1]);
-            }
-            parameterList.add(params);
-            parameters = parameterList.getParameters();
         }
 
         TemplateManager templateManager = TemplateManager.getInstance(project);
@@ -75,8 +83,8 @@ class RequireParameterLocalQuickFix implements LocalQuickFix {
             return;
         }
 
-        if (parameters[1] instanceof FunctionReference) {
-            FunctionReference functionReference = (FunctionReference) parameters[1];
+        if (params instanceof FunctionReference) {
+            FunctionReference functionReference = (FunctionReference) params;
             if (functionReference.getName() == null || !functionReference.getName().equals("compact")) {
                 return;
             }
@@ -104,17 +112,16 @@ class RequireParameterLocalQuickFix implements LocalQuickFix {
             return;
         }
 
-        if (!(parameters[1] instanceof ArrayCreationExpression)) {
+        if (!(params instanceof ArrayCreationExpression array)) {
             return;
         }
-        ArrayCreationExpression params = (ArrayCreationExpression) parameters[1];
 
         Template template = templateManager.createTemplate("", "");
         template.setToReformat(true);
-        Boolean addComma = params.getHashElements().iterator().hasNext();
+        Boolean addComma = array.getHashElements().iterator().hasNext();
         Boolean newLined = false;
 
-        PsiElement psiElement = params.getLastChild();
+        PsiElement psiElement = array.getLastChild();
         while (psiElement instanceof PsiWhiteSpace || psiElement.getText().equals("]")) {
             if (psiElement instanceof PsiWhiteSpace && psiElement.getText().contains("\n")) {
                 newLined = true;

@@ -9,7 +9,6 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
-import com.intellij.util.indexing.FileBasedIndex;
 import com.jetbrains.php.lang.psi.elements.MethodReference;
 import com.jetbrains.php.lang.psi.elements.ParameterList;
 import io.github.byscrimm.yii2insight.common.PhpUtil;
@@ -17,12 +16,14 @@ import io.github.byscrimm.yii2insight.utils.Yii2InsightSettings;
 import io.github.byscrimm.yii2insight.views.entities.ViewInfo;
 import io.github.byscrimm.yii2insight.views.entities.ViewResolve;
 import io.github.byscrimm.yii2insight.views.entities.ViewResolveFrom;
-import io.github.byscrimm.yii2insight.views.index.ViewFileIndex;
+import io.github.byscrimm.yii2insight.views.index.ViewFiles;
 import io.github.byscrimm.yii2insight.views.util.ViewUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -61,7 +62,6 @@ class CompletionProvider extends com.intellij.codeInsight.completion.CompletionP
 
         final Project project = psiElement.getProject();
         final GlobalSearchScope scope = GlobalSearchScope.projectScope(project);
-        final FileBasedIndex fileBasedIndex = FileBasedIndex.getInstance();
 
         int prefixLength = resolve.key.length();
         int lastSlashPosition = resolve.key.lastIndexOf('/');
@@ -84,13 +84,7 @@ class CompletionProvider extends com.intellij.codeInsight.completion.CompletionP
         }
 
         final String prefixFilter = resolve.key.substring(0, prefixLength);
-        final Set<String> keys = new HashSet<>();
-        fileBasedIndex.processAllKeys(ViewFileIndex.identity, key -> {
-            if (key.startsWith(prefixFilter)) {
-                keys.add(key);
-            }
-            return true;
-        }, scope, null);
+        final Map<String, List<ViewInfo>> keys = ViewFiles.all(project, prefixFilter, scope);
 
         final PsiManager psiManager = PsiManager.getInstance(project);
         boolean localViewSearch = false;
@@ -100,8 +94,9 @@ class CompletionProvider extends com.intellij.codeInsight.completion.CompletionP
         }
 
         final String defaultViewExtension = '.' + Yii2InsightSettings.getInstance(psiElement.getProject()).defaultViewExtension;
-        for (String key : keys) {
-            Collection<ViewInfo> views = fileBasedIndex.getValues(ViewFileIndex.identity, key, scope);
+        for (Map.Entry<String, List<ViewInfo>> entry : keys.entrySet()) {
+            final String key = entry.getKey();
+            Collection<ViewInfo> views = entry.getValue();
             for (ViewInfo view : views) {
                 if (!resolve.application.equals(view.application)) {
                     continue;
