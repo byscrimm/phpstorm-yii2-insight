@@ -13,6 +13,7 @@ import io.github.byscrimm.yii2insight.common.*;
 import io.github.byscrimm.yii2insight.relations.*;
 import io.github.byscrimm.yii2insight.widgetsconfig.*;
 import io.github.byscrimm.yii2insight.views.util.RenderParameters;
+import io.github.byscrimm.yii2insight.configurations.ConfigEntries;
 import java.util.*;
 
 /** Real PhpStorm PHP parser/PSI in IntelliJ's Core test environment. No IDE UI or full index. */
@@ -65,7 +66,7 @@ public final class PhpPsiRegressionTest {
             project.registerService(PhpProjectSharedConfiguration.class,new PhpProjectSharedConfiguration());
             project.registerService(com.intellij.pom.tree.TreeAspect.class,new com.intellij.pom.tree.TreeAspect());
             project.registerService(com.intellij.pom.PomModel.class,new com.intellij.pom.core.impl.PomModelImpl(project));
-            arguments(); modelsAndRelations(); contexts(); references(); arrayMode(); widgets(); widgetCallbacks(); queryAliases(); arrayRows(); renderParameters(); incomplete();
+            arguments(); modelsAndRelations(); contexts(); references(); arrayMode(); widgets(); widgetCallbacks(); queryAliases(); arrayRows(); renderParameters(); configEntries(); incomplete();
             System.out.println("PASS: "+checks+" real PHP PSI regression checks");
         } finally { Disposer.dispose(disposable); }
     }
@@ -562,8 +563,36 @@ public final class PhpPsiRegressionTest {
         RenderParameters.deleteArgument(RenderParameters.of(positional).argument());
         eq("delete positional argument", "$this->render('index')", positional.getText());
     }
+    private static Map<String,String> config(String code) { return new TreeMap<>(ConfigEntries.of(php(code), "/app/frontend/config")); }
+    private static void configEntries() {
+        var entries = config("return ['components' => ['cache' => ['class' => \\yii\\caching\\FileCache::class], 'db' => 'yii\\\\db\\\\Connection', 'mailer' => function () { return new \\app\\Mailer(); }, 'bad' => 'not a class', 'dyn' => $class]];");
+        eq("component forms", "\\yii\\caching\\FileCache", entries.get("cache"));
+        eq("string component class", "yii\\db\\Connection", entries.get("db"));
+        eq("closure factory", "\\app\\Mailer", entries.get("mailer"));
+        eq("non-class string skipped", null, entries.get("bad"));
+        eq("dynamic class skipped", null, entries.get("dyn"));
+        entries = config("use yii\\helpers\\ArrayHelper; return ['components' => ArrayHelper::merge(['cache' => \\A::class], require __DIR__ . '/components.php', ['cache' => \\B::class])];");
+        eq("merge keeps last definition", "\\B", entries.get("cache"));
+        eq("include inside merge", "/app/frontend/config/components.php", entries.get(ConfigEntries.INCLUDES));
+        entries = config("return ['components' => require dirname(__DIR__, 2) . '/common/config/../config/parts.php'];");
+        eq("dirname levels and dot segments", "/app/common/config/parts.php", entries.get(ConfigEntries.INCLUDES));
+        entries = config("return ['components' => require $path . '/x.php'];");
+        eq("dynamic include ignored", null, entries.get(ConfigEntries.INCLUDES));
+        entries = config("return ['cache' => ['class' => \\yii\\caching\\ArrayCache::class], 'params' => ['a' => 1]];");
+        eq("root entry candidate", "\\yii\\caching\\ArrayCache", entries.get(ConfigEntries.ROOT + "cache"));
+        eq("non-component root entry", null, entries.get(ConfigEntries.ROOT + "params"));
+        entries = config("return ['container' => ['definitions' => [\\app\\Api::class => \\app\\HttpApi::class, 'app\\\\Pay' => ['class' => \\app\\StripePay::class], \\app\\Opt::class => ['timeout' => 3]], 'singletons' => [\\app\\Log::class => \\app\\FileLog::class]]];");
+        eq("container definition", "\\app\\HttpApi", entries.get(ConfigEntries.DEFINITION + "\\app\\Api"));
+        eq("string key and array definition", "\\app\\StripePay", entries.get(ConfigEntries.DEFINITION + "\\app\\Pay"));
+        eq("property-only definition has no implementation", null, entries.get(ConfigEntries.DEFINITION + "\\app\\Opt"));
+        eq("singleton", "\\app\\FileLog", entries.get(ConfigEntries.DEFINITION + "\\app\\Log"));
+        entries = config("Yii::$container->set(\\app\\Api::class, \\app\\MockApi::class); Yii::$container->setSingleton(\\app\\Clock::class); $other->set(\\app\\X::class, \\app\\Y::class);");
+        eq("container set call", "\\app\\MockApi", entries.get(ConfigEntries.DEFINITION + "\\app\\Api"));
+        eq("singleton without definition maps to itself", "\\app\\Clock", entries.get(ConfigEntries.DEFINITION + "\\app\\Clock"));
+        eq("unrelated set call", null, entries.get(ConfigEntries.DEFINITION + "\\app\\X"));
+    }
     private static void incomplete() {
-        for (String code:List.of("$x->with('","$x->with(['orders' =>", "$this->hasMany(", "$this->render(params:","$x->joinWith(['orders.", "User::find()->joinWith(['orders' => function($q) { $q->alias(", "User::find()->where(['and', ['", "$r = User::find()->asArray()->one(); $r['", "foreach (User::find()->select(['id' =>","$a=$a; $a->with('x');", "\\yii\\grid\\GridView::widget(['columns'=>[['attribute'=>'", "\\yii\\widgets\\DetailView::widget(['model'=>new", "\\yii\\grid\\GridView::widget(['columns'=>[['value'=>fn($row)=>")) {
+        for (String code:List.of("$x->with('","$x->with(['orders' =>", "$this->hasMany(", "$this->render(params:","$x->joinWith(['orders.", "User::find()->joinWith(['orders' => function($q) { $q->alias(", "User::find()->where(['and', ['", "$r = User::find()->asArray()->one(); $r['", "foreach (User::find()->select(['id' =>", "return ['components' => require __DIR__ .", "return ['container' => ['definitions' => [","$a=$a; $a->with('x');", "\\yii\\grid\\GridView::widget(['columns'=>[['attribute'=>'", "\\yii\\widgets\\DetailView::widget(['model'=>new", "\\yii\\grid\\GridView::widget(['columns'=>[['value'=>fn($row)=>")) {
             var file=php(code);
             for (var str:PsiTreeUtil.findChildrenOfType(file,StringLiteralExpression.class)) {
                 RelationContext.of(str);
@@ -574,6 +603,7 @@ public final class PhpPsiRegressionTest {
             for (var param:PsiTreeUtil.findChildrenOfType(file,Parameter.class)) WidgetCallbackTypeProvider.infer(param,widgets);
             for (var ref:PsiTreeUtil.findChildrenOfType(file,MethodReference.class)) resolver.models(ref.getClassReference());
             for (var access:PsiTreeUtil.findChildrenOfType(file,ArrayAccessExpression.class)) new ArrayRows(resolver).row(access.getValue());
+            ConfigEntries.of(file, "/app/config");
             eq("incomplete PHP handled: "+code,true,true);
         }
     }

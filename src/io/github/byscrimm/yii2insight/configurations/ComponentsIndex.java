@@ -1,19 +1,15 @@
 package io.github.byscrimm.yii2insight.configurations;
 
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.indexing.*;
 import com.intellij.util.io.DataExternalizer;
 import com.intellij.util.io.EnumeratorStringDescriptor;
 import com.intellij.util.io.KeyDescriptor;
 import com.jetbrains.php.lang.PhpFileType;
-import com.jetbrains.php.lang.psi.PhpFile;
-import com.jetbrains.php.lang.psi.elements.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
+import java.util.Map;
 
-import static io.github.byscrimm.yii2insight.common.PsiUtil.getArrayCreationChild;
 
 public class ComponentsIndex extends FileBasedIndexExtension<String, String> {
     public static final ID<String, String> identity = ID.create("io.github.byscrimm.yii2insight.ComponentsIndex");
@@ -26,26 +22,9 @@ public class ComponentsIndex extends FileBasedIndexExtension<String, String> {
     @Override
     public @NotNull DataIndexer<String, String, FileContent> getIndexer() {
         return file -> {
-            final HashMap<String, String> result = new HashMap<>();
-
             PsiFile psiFile = file.getPsiFile();
-            for (ArrayHashElement hash : com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(psiFile, ArrayHashElement.class)) {
-                if (!"components".equals(io.github.byscrimm.yii2insight.common.PhpArrays.string(hash.getKey()))
-                        || !(hash.getValue() instanceof ArrayCreationExpression components)) continue;
-                for (ArrayHashElement component : components.getHashElements()) {
-                    String name = io.github.byscrimm.yii2insight.common.PhpArrays.string(component.getKey());
-                    if (name == null) continue;
-                    String className = io.github.byscrimm.yii2insight.common.PhpArrays.className(component.getValue());
-                    if (className == null && component.getValue() instanceof Function factory) {
-                        for (PhpReturn ret : com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(factory, PhpReturn.class)) {
-                            className = io.github.byscrimm.yii2insight.common.PhpArrays.className(ret.getFirstPsiChild());
-                            if (className != null) break;
-                        }
-                    }
-                    if (className != null && !className.isBlank()) result.put(name, className);
-                }
-            }
-            return result;
+            var parent = file.getFile().getParent();
+            return parent == null ? Map.of() : ConfigEntries.of(psiFile, parent.getPath());
         };
     }
 
@@ -61,7 +40,7 @@ public class ComponentsIndex extends FileBasedIndexExtension<String, String> {
 
     @Override
     public int getVersion() {
-        return 7;
+        return 8;
     }
 
     @Override
