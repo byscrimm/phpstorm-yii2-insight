@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `$row['…']` completion for `asArray()->one()` / `asArray()->all()` rows, through local variables, `$rows[0]` and `foreach`. Keys come from `select`/`addSelect` (renamed columns, `alias.column`, `*`, `alias.*`) or documented model columns, plus first-level eager relations as nested rows. `asArray(false)`, dynamic `select`/`asArray`, reassigned values and unknown query methods yield no keys; value types are not inferred.
 - Query builder completion offers explicit table aliases and documented `alias.attribute` columns in `where`, `andWhere`, `orWhere`, `having`, `andHaving`, `select`, `addSelect`, `orderBy`, `addOrderBy`, `groupBy` and `addGroupBy`. Aliases come from `alias()`, `joinWith('relation alias')` / `AS` and `alias()` inside `joinWith()` callbacks; joined models are taken from relation declarations. Conflicting or dynamic aliases, unknown query methods and subqueries are not guessed. Relation properties and getters are not offered as columns.
 
 ## 1.0.0-rc.7

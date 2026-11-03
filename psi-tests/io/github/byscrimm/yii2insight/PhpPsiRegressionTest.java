@@ -64,7 +64,7 @@ public final class PhpPsiRegressionTest {
             project.registerService(PhpProjectSharedConfiguration.class,new PhpProjectSharedConfiguration());
             project.registerService(com.intellij.pom.tree.TreeAspect.class,new com.intellij.pom.tree.TreeAspect());
             project.registerService(com.intellij.pom.PomModel.class,new com.intellij.pom.core.impl.PomModelImpl(project));
-            arguments(); modelsAndRelations(); contexts(); references(); arrayMode(); widgets(); widgetCallbacks(); queryAliases(); incomplete();
+            arguments(); modelsAndRelations(); contexts(); references(); arrayMode(); widgets(); widgetCallbacks(); queryAliases(); arrayRows(); incomplete();
             System.out.println("PASS: "+checks+" real PHP PSI regression checks");
         } finally { Disposer.dispose(disposable); }
     }
@@ -465,8 +465,66 @@ public final class PhpPsiRegressionTest {
         attributes = new QueryAliases(resolver).attributes(classes.get("\\shop\\Address")).stream().map(PhpDocProperty::getName).sorted().toList();
         eq("inherited documented columns", List.of("city_id","id","street"), attributes);
     }
+    private static String rowKeys(PsiFile file, String variable) {
+        var access = PsiTreeUtil.findChildrenOfType(file,ArrayAccessExpression.class).stream()
+            .filter(a -> a.getIndex() != null && a.getIndex().getValue() instanceof StringLiteralExpression s && "?".equals(s.getContents())
+                && a.getValue() != null && a.getValue().getText().equals(variable)).findFirst().orElseThrow();
+        var row = new ArrayRows(resolver).row(access.getValue());
+        if (row == null) return null;
+        var keys = new ArrayList<String>();
+        row.keys().forEach((k,v) -> keys.add(v == null ? k : k + (v.collection() ? "[]" : "{}") + new TreeSet<>(v.keys().keySet())));
+        Collections.sort(keys);
+        return String.join(",", keys);
+    }
+    private static void arrayRows() {
+        php("""
+            namespace rows;
+            use yii\\db\\ActiveRecord;
+            /** @property int $id\n * @property string $name */
+            class Region extends ActiveRecord {}
+            /** @property int $id\n * @property int $region_id\n * @property string $title\n * @property-read Region $region */
+            class City extends ActiveRecord {
+                public function getRegion() { return $this->hasOne(Region::class, ['id' => 'region_id']); }
+                public function getStreets() { return $this->hasMany(Region::class, ['city_id' => 'id']); }
+                public function getLabel() { return 'virtual'; }
+            }
+            """);
+        var file = php("namespace rows; $city = City::find()->asArray()->one(); $city['?'];");
+        eq("one() row has documented columns only", "id,region_id,title", rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->asArray(false)->one(); $city['?'];");
+        eq("asArray(false) is not an array row", null, rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->one(); $city['?'];");
+        eq("model result is not an array row", null, rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->asArray($flag)->one(); $city['?'];");
+        eq("dynamic asArray stays unknown", null, rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->select(['id', 'name' => 'title'])->asArray()->one(); $city['?'];");
+        eq("selected and renamed keys", "id,name", rowKeys(file,"$city"));
+        file = php("namespace rows; $rows = City::find()->alias('c')->joinWith('region r', false)->select('c.id, r.name AS regionName, COUNT(*)')->asArray()->all(); $rows[0]['?']; foreach ($rows as $row) { $row['?']; }");
+        eq("all() element by index; table alias is not a key", "id,regionName", rowKeys(file,"$rows[0]"));
+        eq("foreach row", "id,regionName", rowKeys(file,"$row"));
+        file = php("namespace rows; $rows = City::find()->alias('c')->joinWith('region r', false)->select(['r.*', 'cityId' => 'c.id'])->asArray()->all(); foreach ($rows as $row) { $row['?']; }");
+        eq("alias.* expands joined model", "cityId,id,name", rowKeys(file,"$row"));
+        file = php("namespace rows; $city = City::find()->select('id')->addSelect(['title'])->asArray()->one(); $city['?'];");
+        eq("addSelect appends", "id,title", rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->addSelect('id')->select('title')->asArray()->one(); $city['?'];");
+        eq("select replaces previous columns", "title", rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->select($columns)->asArray()->one(); $city['?'];");
+        eq("dynamic select stays unknown", null, rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->with('region', 'streets')->asArray()->one(); $city['?']; $city['region']['?']; $city['streets'][0]['?'];");
+        eq("eager relations are nested rows", "id,region_id,region{}[id, name],streets[][id, name],title", rowKeys(file,"$city"));
+        eq("hasOne nested row", "id,name", rowKeys(file,"$city['region']"));
+        eq("hasMany nested rows", "id,name", rowKeys(file,"$city['streets'][0]"));
+        file = php("namespace rows; $city = City::find()->with(['region' => function ($q) { $q->select('id'); }])->asArray()->one(); $city['?'];");
+        eq("relation callback keeps nested keys unknown", "id,region,region_id,title", rowKeys(file,"$city"));
+        file = php("namespace rows; $rows = City::find()->asArray()->all(); foreach ($rows as $row) { $row = $other; $row['?']; }");
+        eq("reassigned loop value", null, rowKeys(file,"$row"));
+        file = php("namespace rows; $city = City::find()->asArray()->one(); if ($x) { $city = []; } $city['?'];");
+        eq("ambiguous branch assignment stays unknown", null, rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->customScope()->asArray()->one(); $city['?'];");
+        eq("unknown query method", null, rowKeys(file,"$city"));
+    }
     private static void incomplete() {
-        for (String code:List.of("$x->with('","$x->with(['orders' =>", "$this->hasMany(", "$this->render(params:","$x->joinWith(['orders.", "User::find()->joinWith(['orders' => function($q) { $q->alias(", "User::find()->where(['and', ['","$a=$a; $a->with('x');", "\\yii\\grid\\GridView::widget(['columns'=>[['attribute'=>'", "\\yii\\widgets\\DetailView::widget(['model'=>new", "\\yii\\grid\\GridView::widget(['columns'=>[['value'=>fn($row)=>")) {
+        for (String code:List.of("$x->with('","$x->with(['orders' =>", "$this->hasMany(", "$this->render(params:","$x->joinWith(['orders.", "User::find()->joinWith(['orders' => function($q) { $q->alias(", "User::find()->where(['and', ['", "$r = User::find()->asArray()->one(); $r['", "foreach (User::find()->select(['id' =>","$a=$a; $a->with('x');", "\\yii\\grid\\GridView::widget(['columns'=>[['attribute'=>'", "\\yii\\widgets\\DetailView::widget(['model'=>new", "\\yii\\grid\\GridView::widget(['columns'=>[['value'=>fn($row)=>")) {
             var file=php(code);
             for (var str:PsiTreeUtil.findChildrenOfType(file,StringLiteralExpression.class)) {
                 RelationContext.of(str);
@@ -475,6 +533,7 @@ public final class PhpPsiRegressionTest {
             }
             for (var param:PsiTreeUtil.findChildrenOfType(file,Parameter.class)) WidgetCallbackTypeProvider.infer(param,widgets);
             for (var ref:PsiTreeUtil.findChildrenOfType(file,MethodReference.class)) resolver.models(ref.getClassReference());
+            for (var access:PsiTreeUtil.findChildrenOfType(file,ArrayAccessExpression.class)) new ArrayRows(resolver).row(access.getValue());
             eq("incomplete PHP handled: "+code,true,true);
         }
     }
