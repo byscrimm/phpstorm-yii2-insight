@@ -24,6 +24,7 @@ import java.util.Set;
 public class YiiTypeProvider implements PhpTypeProvider4 {
     final static char TRIM_KEY = '\u0197';
     final static char TRIM_KEY2 = '\u0199';
+    final static char TRIM_KEY3 = '\u0198';
 
     @Override
     public char getKey() {
@@ -48,17 +49,52 @@ public class YiiTypeProvider implements PhpTypeProvider4 {
                 return getClassByArrayCreationOptimized((ArrayCreationExpression) firstParam);
             }
             else {
-                return getClass(firstParam);
+                return withDefinition(getClass(firstParam), firstParam, psiElement);
+            }
+        } else if (psiElement instanceof MethodReference call && call.getParameters().length > 0
+                && call.getClassReference() instanceof FieldReference owner && isYiiStatic(owner)) {
+            // Yii::$app->get('cache') and Yii::$container->get(Cache::class)
+            PhpPsiElement firstParam = (PhpPsiElement) call.getParameters()[0];
+            if ("get".equals(call.getName()) && "app".equals(owner.getName()) && firstParam instanceof StringLiteralExpression name) {
+                return componentType(name.getContents(), psiElement);
+            }
+            if ("get".equals(call.getName()) && "container".equals(owner.getName())) {
+                return withDefinition(getClass(firstParam), firstParam, psiElement);
             }
         }else if(psiElement instanceof FieldReference) {
             String fieldName = PsiUtil.getYiiAppField((FieldReference) psiElement);
-            var file = fieldName == null || psiElement.getContainingFile() == null ? null
-                    : io.github.byscrimm.yii2insight.common.FileUtil.getVirtualFile(psiElement.getContainingFile());
-            if (file != null) {
-                return new PhpType().add("#" + this.getKey() + TRIM_KEY2 + fieldName + TRIM_KEY2 + java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(file.getUrl().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            if (fieldName != null) {
+                return componentType(fieldName, psiElement);
             }
         }
         return null;
+    }
+
+    private static boolean isYiiStatic(FieldReference field) {
+        return field.getClassReference() instanceof ClassReference yii && "Yii".equals(yii.getName());
+    }
+
+    @Nullable
+    private PhpType componentType(String name, PsiElement element) {
+        String origin = origin(element);
+        return origin == null ? null : new PhpType().add("#" + this.getKey() + TRIM_KEY2 + name + TRIM_KEY2 + origin);
+    }
+
+    /** Adds the container definition of a statically named class; the declared class type is kept. */
+    @Nullable
+    private PhpType withDefinition(@Nullable PhpType declared, PsiElement name, PsiElement element) {
+        String fqn = io.github.byscrimm.yii2insight.common.PhpArrays.className(name);
+        String origin = origin(element);
+        if (fqn == null || origin == null) return declared;
+        PhpType type = new PhpType();
+        if (declared != null) type.add(declared);
+        return type.add("#" + this.getKey() + TRIM_KEY3 + (fqn.startsWith("\\") ? fqn : "\\" + fqn) + TRIM_KEY3 + origin);
+    }
+
+    @Nullable
+    private static String origin(PsiElement element) {
+        var file = element.getContainingFile() == null ? null : io.github.byscrimm.yii2insight.common.FileUtil.getVirtualFile(element.getContainingFile());
+        return file == null ? null : java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(file.getUrl().getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     @Override
@@ -67,6 +103,18 @@ public class YiiTypeProvider implements PhpTypeProvider4 {
             return null;
         }
         PhpType phpType = new PhpType();
+
+        int definitionStart = s.indexOf(TRIM_KEY3), definitionEnd = s.lastIndexOf(TRIM_KEY3);
+        if (definitionStart > -1 && definitionStart < definitionEnd) {
+            com.intellij.openapi.vfs.VirtualFile origin = originFile(s.substring(definitionEnd + 1));
+            if (origin == null) return null;
+            for (String className : io.github.byscrimm.yii2insight.configurations.ComponentResolver.definitions(project, origin, s.substring(definitionStart + 1, definitionEnd))) {
+                for (PhpClass phpClass : PhpIndex.getInstance(project).getAnyByFQN(className)) {
+                    phpType.add(phpClass.getType());
+                }
+            }
+            return phpType;
+        }
 
         int trimIndex = s.indexOf(TRIM_KEY);
         if (trimIndex > -1 && s.length() + 1 > trimIndex) {
@@ -93,11 +141,8 @@ public class YiiTypeProvider implements PhpTypeProvider4 {
                 String fieldName = s.substring(trimIndexStart + 1, trimIndexEnd);
                 final GlobalSearchScope scope = GlobalSearchScope.projectScope(project);
 
-                com.intellij.openapi.vfs.VirtualFile origin;
-                try {
-                    String url = new String(java.util.Base64.getUrlDecoder().decode(s.substring(trimIndexEnd + 1)), java.nio.charset.StandardCharsets.UTF_8);
-                    origin = com.intellij.openapi.vfs.VirtualFileManager.getInstance().findFileByUrl(url);
-                } catch (IllegalArgumentException ex) { return null; }
+                com.intellij.openapi.vfs.VirtualFile origin = originFile(s.substring(trimIndexEnd + 1));
+                if (origin == null) return null;
                 for (String className : io.github.byscrimm.yii2insight.configurations.ComponentResolver.classes(project, origin, fieldName)) {
                     for (PhpClass phpClass : PhpIndex.getInstance(project).getAnyByFQN(className)) {
                         phpType.add(phpClass.getType());
@@ -106,6 +151,16 @@ public class YiiTypeProvider implements PhpTypeProvider4 {
             }
         }
         return phpType;
+    }
+
+    @Nullable
+    private static com.intellij.openapi.vfs.VirtualFile originFile(String encoded) {
+        try {
+            String url = new String(java.util.Base64.getUrlDecoder().decode(encoded), java.nio.charset.StandardCharsets.UTF_8);
+            return com.intellij.openapi.vfs.VirtualFileManager.getInstance().findFileByUrl(url);
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     @NotNull

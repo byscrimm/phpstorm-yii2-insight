@@ -27,8 +27,13 @@ public class YiiAppCompletionProvider extends CompletionProvider<CompletionParam
         if(psiElement.getParent() instanceof FieldReference){
             String field = PsiUtil.getYiiAppField((FieldReference) psiElement.getParent());
             if(field != null){
-                fileBasedIndex.processAllKeys(ComponentsIndex.identity, key -> {
+                final java.util.Set<String> added = new java.util.HashSet<>();
+                fileBasedIndex.processAllKeys(ComponentsIndex.identity, indexKey -> {
+                    // Components of included files are stored under the ROOT prefix; other @ keys are not components.
+                    final String key = indexKey.startsWith(ConfigEntries.ROOT) ? indexKey.substring(ConfigEntries.ROOT.length()) : indexKey;
+                    if (key.startsWith("@") || !added.add(key)) return true;
                     java.util.List<String> values = new java.util.ArrayList<>(ComponentResolver.classes(psiElement, key));
+                    if (values.isEmpty()) added.remove(key);
                     if(values.size() > 0){
                         LookupElementBuilder lookupElement = LookupElementBuilder.create(key)
                                 .withTypeText(values.get(0), true)

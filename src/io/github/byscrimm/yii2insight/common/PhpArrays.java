@@ -21,7 +21,8 @@ public final class PhpArrays {
         return null;
     }
     public static String className(PsiElement value) {
-        if (value instanceof StringLiteralExpression literal) return literal.getContents();
+        // 'app\\models\\User' and 'app\models\User' name the same class.
+        if (value instanceof StringLiteralExpression literal) return literal.getContents().replace("\\\\", "\\");
         if (value instanceof ClassConstantReference ref && "class".equals(ref.getName()) && ref.getClassReference() instanceof ClassReference clazz)
             return clazz.getFQN();
         if (value instanceof MethodReference ref && "className".equals(ref.getName()) && ref.getClassReference() instanceof ClassReference clazz)
