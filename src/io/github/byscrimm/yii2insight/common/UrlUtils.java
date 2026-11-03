@@ -12,7 +12,8 @@ import com.jetbrains.php.lang.psi.elements.*;
 import java.util.*;
 
 public final class UrlUtils {
-    private record Route(String name, Method action, PhpClass controller) {}
+    /** {@code config} is the declaring config file of a controllerMap route, otherwise null. */
+    private record Route(String name, Method action, PhpClass controller, VirtualFile config) {}
     private static List<Route> routes(Project project) {
         return CachedValuesManager.getManager(project).getCachedValue(project, () -> {
             List<Route> result = new ArrayList<>();
@@ -21,25 +22,37 @@ public final class UrlUtils {
                 if (controller.isAbstract()) continue;
                 String prefix = controllerRoute(controller);
                 if (prefix == null) continue;
-                for (Method method : controller.getMethods()) {
-                    String name = method.getName();
-                    if (method.getAccess().isPublic() && !method.isStatic() && name.length() > 6
-                            && name.startsWith("action") && Character.isUpperCase(name.charAt(6))) {
-                        result.add(new Route(prefix + "/" + RouteNames.id(name.substring(6)), method, controller));
-                    }
-                }
-                Method actions = controller.findMethodByName("actions");
-                ArrayCreationExpression config = actions == null ? null : PhpArrays.returnedArray(actions);
-                if (config != null) for (ArrayHashElement entry : config.getHashElements()) {
-                    String id = PhpArrays.string(entry.getKey()), fqn = PhpArrays.className(entry.getValue());
-                    if (id == null || fqn == null) continue;
-                    PhpClass action = ClassUtils.getClass(PhpIndex.getInstance(project), fqn);
-                    Method run = action == null ? null : action.findMethodByName("run");
-                    if (run != null) result.add(new Route(prefix + "/" + id, run, controller));
-                }
+                actions(project, controller, prefix, null, result);
             }
+            // controllerMap ids replace the path-derived controller id; visibility follows the declaring config.
+            com.intellij.util.indexing.FileBasedIndex index = com.intellij.util.indexing.FileBasedIndex.getInstance();
+            var scope = com.intellij.psi.search.GlobalSearchScope.projectScope(project);
+            index.processAllKeys(io.github.byscrimm.yii2insight.configurations.ComponentsIndex.identity, key -> {
+                if (!key.startsWith(io.github.byscrimm.yii2insight.configurations.ConfigEntries.CONTROLLER)) return true;
+                String id = key.substring(io.github.byscrimm.yii2insight.configurations.ConfigEntries.CONTROLLER.length());
+                index.processValues(io.github.byscrimm.yii2insight.configurations.ComponentsIndex.identity, key, null, (file, fqn) -> {
+                    for (PhpClass controller : PhpIndex.getInstance(project).getAnyByFQN(fqn)) actions(project, controller, id, file, result);
+                    return true;
+                }, scope);
+                return true;
+            }, scope, null);
             return CachedValueProvider.Result.create(List.copyOf(result), PsiModificationTracker.MODIFICATION_COUNT);
         });
+    }
+    private static void actions(Project project, PhpClass controller, String prefix, VirtualFile config, List<Route> result) {
+        for (Method method : controller.getMethods()) {
+            String name = method.getName();
+            if (method.getAccess().isPublic() && !method.isStatic() && name.length() > 6
+                    && name.startsWith("action") && Character.isUpperCase(name.charAt(6))) {
+                result.add(new Route(prefix + "/" + RouteNames.id(name.substring(6)), method, controller, config));
+            }
+        }
+        PhpIndex index = PhpIndex.getInstance(project);
+        for (Map.Entry<String,String> action : ControllerActions.of(controller, index::getAnyByFQN).entrySet()) {
+            PhpClass type = action.getValue() == null ? null : ClassUtils.getClass(index, action.getValue());
+            Method run = type == null ? null : type.findMethodByName("run");
+            if (run != null) result.add(new Route(prefix + "/" + action.getKey(), run, controller, config));
+        }
     }
     public static String controllerRoute(PhpClass controller) {
         if (!controller.getName().endsWith("Controller") || controller.getContainingFile() == null) return null;
@@ -58,7 +71,9 @@ public final class UrlUtils {
     public static HashMap<String, Method> getRoutes(PsiElement origin) {
         HashMap<String, Method> result = new LinkedHashMap<>();
         for (Route route : routes(origin.getProject())) {
-            if (YiiContext.sameApplication(origin, route.controller)) result.put(route.name, route.action);
+            boolean visible = route.config == null ? YiiContext.sameApplication(origin, route.controller)
+                    : origin.getContainingFile() != null && YiiContext.configPriority(FileUtil.getVirtualFile(origin.getContainingFile()), route.config, origin.getProject().getBasePath()) >= 0;
+            if (visible) result.put(route.name, route.action);
         }
         return result;
     }

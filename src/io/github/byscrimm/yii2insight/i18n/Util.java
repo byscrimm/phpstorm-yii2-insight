@@ -1,5 +1,8 @@
 package io.github.byscrimm.yii2insight.i18n;
 
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiManager;
+
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -15,27 +18,79 @@ import java.util.Collections;
  * Created by NVlad on 06.01.2017.
  */
 class Util {
+    /** Category name → its message file in the first locale that has it. */
     @NotNull
-    static PsiElement[] getCategories(PhpPsiElement element) {
-        java.util.Map<String,PsiElement> categories = new java.util.TreeMap<>();
-        for (PsiDirectory directory : getDirectories(element)) {
-            for (PsiFile file : directory.getFiles()) if (file.getName().endsWith(".php")) categories.putIfAbsent(file.getName(), file);
+    static java.util.Map<String, PsiElement> getCategories(PhpPsiElement element) {
+        java.util.Map<String, PsiElement> categories = new java.util.TreeMap<>();
+        PsiManager manager = PsiManager.getInstance(element.getProject());
+        TranslationSources.Config config = TranslationSources.of(element);
+        for (TranslationSources.Source source : config.sources()) {
+            for (VirtualFile locale : TranslationSources.locales(source.basePath(), config.language())) {
+                for (java.util.Map.Entry<String, String> mapped : source.fileMap().entrySet()) {
+                    VirtualFile file = locale.findFileByRelativePath(mapped.getValue());
+                    PsiFile psi = file == null ? null : manager.findFile(file);
+                    if (psi != null && TranslationSources.match(config.sources(), mapped.getKey()) == source) categories.putIfAbsent(mapped.getKey(), psi);
+                }
+                for (VirtualFile file : locale.getChildren()) {
+                    if (file.isDirectory() || !"php".equals(file.getExtension()) || source.fileMap().containsValue(file.getName())) continue;
+                    PsiFile psi = manager.findFile(file);
+                    if (psi != null && TranslationSources.match(config.sources(), file.getNameWithoutExtension()) == source) categories.putIfAbsent(file.getNameWithoutExtension(), psi);
+                }
+            }
         }
-        return categories.values().toArray(new PsiElement[0]);
+        for (PsiDirectory directory : getDirectories(element)) {
+            for (PsiFile file : directory.getFiles()) if (file.getName().endsWith(".php")) categories.putIfAbsent(file.getName().substring(0, file.getName().length() - 4), file);
+        }
+        return categories;
+    }
+
+    /** Message files of a category: configured PhpMessageSource first (application language first), else nearby messages directories. */
+    @NotNull
+    static java.util.List<PsiFile> getMessageFiles(PsiElement element, String category) {
+        java.util.List<PsiFile> files = new java.util.ArrayList<>();
+        PsiManager manager = PsiManager.getInstance(element.getProject());
+        TranslationSources.Config config = TranslationSources.of(element);
+        TranslationSources.Source source = TranslationSources.match(config.sources(), category);
+        if (source != null) {
+            for (VirtualFile locale : TranslationSources.locales(source.basePath(), config.language())) {
+                VirtualFile file = locale.findFileByRelativePath(source.fileName(category));
+                PsiFile psi = file == null ? null : manager.findFile(file);
+                if (psi != null) files.add(psi);
+            }
+            return files;
+        }
+        for (PsiDirectory directory : getDirectories(element)) {
+            PsiFile file = directory.findFile(category + ".php");
+            if (file != null) files.add(file);
+        }
+        return files;
     }
 
     @NotNull
-    static ArrayHashElement[] getMessages(PhpPsiElement element, String category) {
+    static ArrayHashElement[] getMessages(PsiElement element, String category) {
         java.util.Map<String,ArrayHashElement> messages = new java.util.LinkedHashMap<>();
-        for (PsiDirectory directory : getDirectories(element)) {
-            PsiFile file = directory.findFile(category + ".php");
-            if (file != null) for (ArrayHashElement message : loadMessagesFromFile(file)) {
+        for (PsiFile file : getMessageFiles(element, category)) {
+            for (ArrayHashElement message : loadMessagesFromFile(file)) {
                 String key = io.github.byscrimm.yii2insight.common.PhpArrays.string(message.getKey());
                 if (key != null) messages.putIfAbsent(key, message);
             }
         }
         return messages.values().toArray(new ArrayHashElement[0]);
     }
+
+    /** Message keys equal to {@code message} in every message file of the category. */
+    @NotNull
+    static java.util.List<StringLiteralExpression> findMessage(PsiElement element, String category, String message) {
+        java.util.List<StringLiteralExpression> result = new java.util.ArrayList<>();
+        for (PsiFile file : getMessageFiles(element, category)) {
+            for (ArrayHashElement entry : loadMessagesFromFile(file)) {
+                if (entry.getKey() instanceof StringLiteralExpression key && message.equals(key.getContents())) result.add(key);
+            }
+        }
+        return result;
+    }
+
+    static java.util.Collection<ArrayHashElement> messages(PsiFile file) { return loadMessagesFromFile(file); }
 
     @NotNull
     static String PhpExpressionValue(PhpExpression expression) { return expressionValue(expression, 0); }

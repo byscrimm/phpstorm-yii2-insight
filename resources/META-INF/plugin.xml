@@ -111,6 +111,17 @@
 
         <!-- i18n -->
         <completion.contributor language="PHP" implementationClass="io.github.byscrimm.yii2insight.i18n.CompletionContributor"/>
+        <psi.referenceContributor language="PHP" implementation="io.github.byscrimm.yii2insight.i18n.MessageReferenceContributor"/>
+        <localInspection language="PHP" shortName="Yii2InsightMessageParametersInspection"
+                         displayName="Message parameters do not match placeholders"
+                         groupName="i18n" groupPath="PHP,Framework,Yii2"
+                         enabledByDefault="true" level="WARNING"
+                         implementationClass="io.github.byscrimm.yii2insight.i18n.MessageParametersInspection"/>
+        <localInspection language="PHP" shortName="Yii2InsightMissingMessageInspection"
+                         displayName="Message missing in translation files"
+                         groupName="i18n" groupPath="PHP,Framework,Yii2"
+                         enabledByDefault="false" level="WEAK WARNING"
+                         implementationClass="io.github.byscrimm.yii2insight.i18n.MissingMessageInspection"/>
 
         <!-- Database -->
         <completion.contributor language="PHP"

@@ -11,20 +11,17 @@ import org.jetbrains.annotations.NotNull;
  */
 class CategoryLookupElement extends LookupElement {
     final private PsiElement myCategory;
+    final private String myName;
 
-    CategoryLookupElement(PsiElement category) {
+    CategoryLookupElement(PsiElement category, String name) {
         myCategory = category;
+        myName = name;
     }
 
     @NotNull
     @Override
     public String getLookupString() {
-        if (myCategory instanceof PsiFile) {
-            String filename = ((PsiFile) myCategory).getName();
-            return filename.substring(0, filename.lastIndexOf("."));
-        }
-
-        return myCategory.getText();
+        return myName;
     }
 
     @Override
@@ -35,7 +32,8 @@ class CategoryLookupElement extends LookupElement {
             PsiFile file = (PsiFile) myCategory;
             String filename = file.getName();
             presentation.setIcon(file.getIcon(0));
-            presentation.setItemText(filename.substring(0, filename.lastIndexOf(".")));
+            presentation.setItemText(myName);
+            if (!filename.equals(myName + ".php")) presentation.setTailText("  " + filename, true);
         }
     }
 }

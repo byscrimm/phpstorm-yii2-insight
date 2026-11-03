@@ -22,6 +22,13 @@ public final class ConfigEntries {
     public static final String INCLUDES = "@include:components";
     /** DI definitions: interface or class name → implementation class. */
     public static final String DEFINITION = "@di:";
+    /** {@code controllerMap} id → controller class. */
+    public static final String CONTROLLER = "@controller:";
+    /** {@code i18n.translations} pattern → basePath, then {@code category=file} pairs, separated by {@link #SEPARATOR}. */
+    public static final String TRANSLATION = "@i18n:";
+    /** Application {@code language}. */
+    public static final String LANGUAGE = "@language";
+    public static final String SEPARATOR = "\u0001";
     private static final int MAX_DEPTH = 16;
 
     private ConfigEntries() {}
@@ -34,6 +41,35 @@ public final class ConfigEntries {
             ProgressManager.checkCanceled();
             String key = PhpArrays.string(hash.getKey());
             if ("components".equals(key)) components(hash.getValue(), directory, result, includes, 0);
+            else if ("translations".equals(key) && hash.getValue() instanceof ArrayCreationExpression translations) {
+                ArrayHashElement owner = PsiTreeUtil.getParentOfType(hash, ArrayHashElement.class);
+                if (owner == null || !"i18n".equals(PhpArrays.string(owner.getKey()))) continue;
+                for (ArrayHashElement source : translations.getHashElements()) {
+                    String pattern = PhpArrays.string(source.getKey());
+                    if (pattern == null || !(source.getValue() instanceof ArrayCreationExpression config)) continue;
+                    String className = PhpArrays.className(config);
+                    // Only file-based PHP message sources are browsable.
+                    if (className != null && !normalize(className).equals("\\yii\\i18n\\PhpMessageSource")) continue;
+                    PsiElement base = PhpArrays.value(config, "basePath");
+                    String basePath = base == null ? "@app/messages" : path(base, directory) != null ? path(base, directory) : PhpArrays.string(base);
+                    if (basePath == null || basePath.contains(SEPARATOR)) continue;
+                    StringBuilder value = new StringBuilder(basePath);
+                    if (PhpArrays.value(config, "fileMap") instanceof ArrayCreationExpression fileMap)
+                        for (ArrayHashElement mapped : fileMap.getHashElements()) {
+                            String category = PhpArrays.string(mapped.getKey()), name = PhpArrays.string(mapped.getValue());
+                            if (category != null && name != null && !category.contains("=")) value.append(SEPARATOR).append(category).append('=').append(name);
+                        }
+                    result.put(TRANSLATION + pattern, value.toString());
+                }
+            }
+            else if ("language".equals(key) && hash.getParent() == PhpArrays.returnedArray(file) && PhpArrays.string(hash.getValue()) instanceof String language)
+                result.put(LANGUAGE, language);
+            else if ("controllerMap".equals(key) && hash.getValue() instanceof ArrayCreationExpression map) {
+                for (ArrayHashElement entry : map.getHashElements()) {
+                    String id = PhpArrays.string(entry.getKey()), className = component(entry.getValue());
+                    if (id != null && className != null) result.put(CONTROLLER + id, normalize(className));
+                }
+            }
             else if ("container".equals(key) && hash.getValue() instanceof ArrayCreationExpression container) {
                 for (String section : List.of("definitions", "singletons"))
                     if (PhpArrays.value(container, section) instanceof ArrayCreationExpression definitions) definitions(definitions, result);

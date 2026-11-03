@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Routes include `controllerMap` entries from config and external actions inherited through `parent::actions()` with `unset`/added ids (REST `ActiveController`).
+- Translations follow configured `i18n.translations` PhpMessageSource `basePath` and `fileMap` and list the application `language` first. Ctrl+Click on a `Yii::t()` message opens its entries in all locales. New inspections: ICU placeholder/parameter mismatch (enabled) and a missing message with a fix adding it to all category files (disabled by default).
 - Components defined in a statically required file (`'components' => require __DIR__ . '/components.php'`, also inside `ArrayHelper::merge` and with `dirname(__DIR__, n)`) are completed and typed for `Yii::$app`. `Yii::$app->get('name')` returns the component type. Container definitions (`container.definitions/singletons`, `Yii::$container->set/setSingleton` in config) add the implementation type to `Yii::createObject(X::class)` and `Yii::$container->get(X::class)`.
 - Fixed: string class names with escaped backslashes (`'app\\models\\User'`) and component factories written as closures are now resolved (components index version 8).
 - View inspections, navigation and PHPDoc fixes read render parameters from named arguments (`params:`, `view:`), `compact()` and an unmodified local array variable. Incomplete parameter sets (dynamic keys, spreads, function results, changed variables) are not diagnosed; parameters held in a variable get no quick fix and no unused warnings. Adding and removing parameters keeps other arguments and comments, including named `params:`.

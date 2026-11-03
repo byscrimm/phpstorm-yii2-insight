@@ -31,6 +31,15 @@ public final class CoreRegressionTest {
         equal(null, AliasResolver.resolve(Map.of("@a", "@a/more"), "@a"));
         equal(null, AliasResolver.resolve(aliases, null));
         equal("/tmp/file", AliasResolver.resolve(aliases, "/tmp/file"));
+        equal(Set.of("name", "count"), IcuPlaceholders.of("Hello {name}, you have {count, number} items"));
+        equal(Set.of("n", "total"), IcuPlaceholders.of("{n, plural, =0{none} one{# item of {total}} other{# items}}"));
+        equal(Set.of("g", "who"), IcuPlaceholders.of("{g, select, male{He} other{{who}}} left"));
+        equal(Set.of(), IcuPlaceholders.of("Use '{literal}' braces and it''s fine"));
+        equal(Set.of("0", "1"), IcuPlaceholders.of("{0} and {1}"));
+        equal(Set.of("d"), IcuPlaceholders.of("{d, date, short}"));
+        equal(null, IcuPlaceholders.of("Unbalanced {name"));
+        equal(null, IcuPlaceholders.of("Stray } brace"));
+        equal(null, IcuPlaceholders.of("{bad name}"));
         equal(Set.of("a", "b"), SqlParameters.names("id=:a OR x=:b OR z=:a"));
         equal(Set.of("id"), SqlParameters.names("value::text=:id AND ':literal' = ':value' /* :comment */ -- :line\n"));
         equal(Set.of("id"), SqlParameters.names("a=$tag$:hidden$tag$ AND b=$$:hidden$$ AND id=:id"));
