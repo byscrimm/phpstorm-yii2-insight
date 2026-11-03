@@ -97,9 +97,13 @@ abstract class CommandUpDownRedoBase extends CommandBase {
                 myMigrationStatusMap.put(migration, migration.status);
             }
 
-            executeProcess(processHandler);
+            int exitCode = executeProcess(processHandler);
+            if (exitCode != 0 && getConsoleView() != null) {
+                getConsoleView().print("\nProcess " + (isCanceled() ? "cancelled" : "finished with exit code " + exitCode) + "\n",
+                        com.intellij.execution.ui.ConsoleViewContentType.ERROR_OUTPUT);
+            }
 
-            setErrorStatusForMigrationInProgress(action);
+            setErrorStatusForMigrationInProgress(action, exitCode);
         } catch (ExecutionException e) {
             YiiCommandLineUtil.processError(e);
         }
@@ -134,10 +138,11 @@ abstract class CommandUpDownRedoBase extends CommandBase {
         }
     }
 
-    private void setErrorStatusForMigrationInProgress(String action) {
+    private void setErrorStatusForMigrationInProgress(String action, int exitCode) {
         if (myMigrations.size() > 0) {
             for (Migration migration : myMigrations) {
-                if (isInvalidMigrationStatus(migration, action)) {
+                // A successful run only leaves interrupted migrations in progress; unchanged ones are fine.
+                if (exitCode == 0 ? migration.status == MigrationStatus.Progress : isInvalidMigrationStatus(migration, action)) {
                     if ("reverting".equals(direction)) {
                         migration.status = MigrationStatus.RollbackError;
                     } else {
