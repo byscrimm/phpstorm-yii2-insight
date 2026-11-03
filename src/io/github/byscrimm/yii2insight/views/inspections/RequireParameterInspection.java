@@ -8,7 +8,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.ArrayUtil;
-import com.intellij.util.indexing.FileBasedIndex;
 import com.jetbrains.php.lang.inspections.PhpInspection;
 import com.jetbrains.php.lang.psi.elements.ArrayCreationExpression;
 import com.jetbrains.php.lang.psi.elements.FunctionReference;
@@ -20,7 +19,8 @@ import io.github.byscrimm.yii2insight.common.YiiApplicationUtils;
 import io.github.byscrimm.yii2insight.utils.Yii2InsightSettings;
 import io.github.byscrimm.yii2insight.views.entities.ViewInfo;
 import io.github.byscrimm.yii2insight.views.entities.ViewResolve;
-import io.github.byscrimm.yii2insight.views.index.ViewFileIndex;
+import io.github.byscrimm.yii2insight.views.index.ViewFiles;
+import io.github.byscrimm.yii2insight.views.util.RenderParameters;
 import io.github.byscrimm.yii2insight.views.util.ViewUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,12 +53,16 @@ public class RequireParameterInspection extends PhpInspection {
                     return;
                 }
 
-                final PsiElement[] renderParameters = reference.getParameters();
-                if (renderParameters.length == 0 || !(renderParameters[0] instanceof StringLiteralExpression)) {
+                final PsiElement view = RenderParameters.view(reference);
+                if (!(view instanceof StringLiteralExpression)) {
+                    return;
+                }
+                final RenderParameters passed = RenderParameters.of(reference);
+                if (!passed.complete()) {
                     return;
                 }
 
-                final ViewResolve resolve = ViewUtil.resolveView(renderParameters[0]);
+                final ViewResolve resolve = ViewUtil.resolveView(view);
                 if (resolve == null) {
                     return;
                 }
@@ -69,8 +73,7 @@ public class RequireParameterInspection extends PhpInspection {
                 }
 
                 final Project project = reference.getProject();
-                final Collection<ViewInfo> views = FileBasedIndex.getInstance()
-                        .getValues(ViewFileIndex.identity, key, GlobalSearchScope.projectScope(project));
+                final Collection<ViewInfo> views = ViewFiles.find(project, key, GlobalSearchScope.projectScope(project));
                 final String application = YiiApplicationUtils.getApplicationName(reference.getContainingFile());
                 views.removeIf(viewInfo -> !application.equals(viewInfo.application));
                 if (views.size() == 0) {
@@ -78,49 +81,27 @@ public class RequireParameterInspection extends PhpInspection {
                 }
 
                 final Collection<String> viewParameters = new HashSet<>();
-                for (ViewInfo view : views) {
-                    viewParameters.addAll(view.parameters);
+                for (ViewInfo info : views) {
+                    viewParameters.addAll(info.parameters);
                 }
                 if (viewParameters.size() == 0) {
                     return;
                 }
 
 
-                final Collection<String> existKeys;
-                if (renderParameters.length > 1) {
-                    if (renderParameters[1] instanceof ArrayCreationExpression) {
-                        existKeys = PhpUtil.getArrayKeys((ArrayCreationExpression) renderParameters[1]);
-                    } else if (renderParameters[1] instanceof FunctionReference) {
-                        FunctionReference function = (FunctionReference) renderParameters[1];
-                        if (function.getName() != null && function.getName().equals("compact")) {
-                            existKeys = new HashSet<>();
-                            for (PsiElement element : function.getParameters()) {
-                                if (element instanceof StringLiteralExpression) {
-                                    existKeys.add(((StringLiteralExpression) element).getContents());
-                                }
-                            }
-                        } else {
-                            return;
-                        }
-                    } else {
-                        return;
-                    }
-                } else {
-                    existKeys = new HashSet<>();
-                }
-
+                final Collection<String> existKeys = passed.names();
                 viewParameters.removeIf(existKeys::contains);
                 if (viewParameters.size() == 0) {
                     return;
                 }
 
-                String description = "View " + renderParameters[0].getText() + " require ";
+                String description = "View " + view.getText() + " require ";
                 final Iterator<String> parameterIterator = viewParameters.iterator();
                 if (!isOnTheFly) {
                     while (parameterIterator.hasNext()) {
                         final String parameter = parameterIterator.next();
                         final String problemDescription = description + "\"" + parameter + "\" parameter.";
-                        problemsHolder.registerProblem(reference, problemDescription, new RequireParameterLocalQuickFix(parameter));
+                        problemsHolder.registerProblem(reference, problemDescription, passed.direct() ? new LocalQuickFix[]{new RequireParameterLocalQuickFix(parameter)} : LocalQuickFix.EMPTY_ARRAY);
                     }
                     return;
                 }
@@ -146,7 +127,7 @@ public class RequireParameterInspection extends PhpInspection {
                     description += "\"" + parameter + "\" parameter.";
                     fixes.add(new RequireParameterLocalQuickFix(parameter));
                 }
-                problemsHolder.registerProblem(reference, description, fixes.toArray(new LocalQuickFix[0]));
+                problemsHolder.registerProblem(reference, description, passed.direct() ? fixes.toArray(new LocalQuickFix[0]) : LocalQuickFix.EMPTY_ARRAY);
             }
         };
     }

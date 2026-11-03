@@ -2,9 +2,7 @@ package io.github.byscrimm.yii2insight.views.settings;
 
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.indexing.FileBasedIndex;
 import io.github.byscrimm.yii2insight.utils.Yii2InsightSettings;
-import io.github.byscrimm.yii2insight.views.index.ViewFileIndex;
 import io.github.byscrimm.yii2insight.views.util.ViewUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -82,7 +80,6 @@ public class ViewSettings implements Configurable {
             mySettings.defaultViewExtension = defaultViewFileExt.getModel().getSelectedItem().toString();
 
             ViewUtil.resetPathMapPatterns(myProject);
-            FileBasedIndex.getInstance().requestRebuild(ViewFileIndex.identity);
         }
         mySettings.defaultViewClass = defaultViewClass.getText();
     }

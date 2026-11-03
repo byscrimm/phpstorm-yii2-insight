@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- View inspections, navigation and PHPDoc fixes read render parameters from named arguments (`params:`, `view:`), `compact()` and an unmodified local array variable. Incomplete parameter sets (dynamic keys, spreads, function results, changed variables) are not diagnosed; parameters held in a variable get no quick fix and no unused warnings. Adding and removing parameters keeps other arguments and comments, including named `params:`.
+- The view index no longer depends on project settings: view keys, applications and themes are resolved at query time (index version 35), so changing the Yii root or theme path map takes effect without an index rebuild.
 - `$row['…']` completion for `asArray()->one()` / `asArray()->all()` rows, through local variables, `$rows[0]` and `foreach`. Keys come from `select`/`addSelect` (renamed columns, `alias.column`, `*`, `alias.*`) or documented model columns, plus first-level eager relations as nested rows, honouring `select`/`addSelect` inside the relation callback. `asArray(false)`, dynamic `select`/`asArray`, reassigned values and unknown query methods yield no keys; value types are not inferred.
 - Query builder completion offers explicit table aliases and documented `alias.attribute` columns in `where`, `andWhere`, `orWhere`, `having`, `andHaving`, `select`, `addSelect`, `orderBy`, `addOrderBy`, `groupBy` and `addGroupBy`. Aliases come from `alias()`, `joinWith('relation alias')` / `AS` and `alias()` inside `joinWith()` callbacks; joined models are taken from relation declarations. Conflicting or dynamic aliases, unknown query methods and subqueries are not guessed. Relation properties and getters are not offered as columns.
 

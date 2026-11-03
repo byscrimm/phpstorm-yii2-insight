@@ -6,10 +6,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.util.indexing.FileBasedIndex;
 import io.github.byscrimm.yii2insight.common.YiiApplicationUtils;
 import io.github.byscrimm.yii2insight.utils.Yii2InsightSettings;
-import io.github.byscrimm.yii2insight.views.index.ViewFileIndex;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
@@ -67,7 +65,6 @@ public class SettingsForm implements Configurable {
         settings.yiiRootPath = StringUtil.nullize(yiiRootPath.getText().trim());
 
         YiiApplicationUtils.resetYiiRootPath(myProject);
-        FileBasedIndex.getInstance().requestRebuild(ViewFileIndex.identity);
     }
 
     @Override

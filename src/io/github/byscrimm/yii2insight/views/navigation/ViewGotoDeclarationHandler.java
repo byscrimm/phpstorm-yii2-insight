@@ -8,13 +8,12 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.util.indexing.FileBasedIndex;
 import io.github.byscrimm.yii2insight.common.PhpUtil;
 import io.github.byscrimm.yii2insight.utils.Yii2InsightSettings;
 import io.github.byscrimm.yii2insight.views.entities.ViewInfo;
 import io.github.byscrimm.yii2insight.views.entities.ViewResolve;
 import io.github.byscrimm.yii2insight.views.entities.ViewResolveFrom;
-import io.github.byscrimm.yii2insight.views.index.ViewFileIndex;
+import io.github.byscrimm.yii2insight.views.index.ViewFiles;
 import io.github.byscrimm.yii2insight.views.util.ViewUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +41,7 @@ public class ViewGotoDeclarationHandler implements GotoDeclarationHandler {
                 key = key + '.' + Yii2InsightSettings.getInstance(psiElement.getProject()).defaultViewExtension;
             }
 
-            final @NotNull List<ViewInfo> views = FileBasedIndex.getInstance().getValues(ViewFileIndex.identity, key, GlobalSearchScope.projectScope(project));
+            final @NotNull List<ViewInfo> views = ViewFiles.find(project, key, GlobalSearchScope.projectScope(project));
             if (!views.isEmpty()) {
                 boolean localViewSearch = false;
                 if (resolve.from == ViewResolveFrom.View) {

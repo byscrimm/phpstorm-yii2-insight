@@ -12,6 +12,7 @@ import com.jetbrains.php.lang.psi.elements.*;
 import io.github.byscrimm.yii2insight.common.*;
 import io.github.byscrimm.yii2insight.relations.*;
 import io.github.byscrimm.yii2insight.widgetsconfig.*;
+import io.github.byscrimm.yii2insight.views.util.RenderParameters;
 import java.util.*;
 
 /** Real PhpStorm PHP parser/PSI in IntelliJ's Core test environment. No IDE UI or full index. */
@@ -64,7 +65,7 @@ public final class PhpPsiRegressionTest {
             project.registerService(PhpProjectSharedConfiguration.class,new PhpProjectSharedConfiguration());
             project.registerService(com.intellij.pom.tree.TreeAspect.class,new com.intellij.pom.tree.TreeAspect());
             project.registerService(com.intellij.pom.PomModel.class,new com.intellij.pom.core.impl.PomModelImpl(project));
-            arguments(); modelsAndRelations(); contexts(); references(); arrayMode(); widgets(); widgetCallbacks(); queryAliases(); arrayRows(); incomplete();
+            arguments(); modelsAndRelations(); contexts(); references(); arrayMode(); widgets(); widgetCallbacks(); queryAliases(); arrayRows(); renderParameters(); incomplete();
             System.out.println("PASS: "+checks+" real PHP PSI regression checks");
         } finally { Disposer.dispose(disposable); }
     }
@@ -533,11 +534,40 @@ public final class PhpPsiRegressionTest {
         file = php("namespace rows; $city = City::find()->customScope()->asArray()->one(); $city['?'];");
         eq("unknown query method", null, rowKeys(file,"$city"));
     }
+    private static String passed(String code) {
+        var parameters = RenderParameters.of(call(php(code),"render"));
+        return String.join(",", parameters.names()) + (parameters.complete() ? "" : " incomplete") + (parameters.direct() ? "" : " indirect");
+    }
+    private static void renderParameters() {
+        eq("positional array", "model,form", passed("$this->render('index', ['model' => $m, 'form' => $f]);"));
+        eq("named reordered arguments", "model", passed("$this->render(params: ['model' => $m], view: 'index');"));
+        eq("compact", "model,form", passed("$model = 1; $this->render('index', compact('model', 'form'));"));
+        eq("compact with dynamic name", "model incomplete", passed("$this->render('index', compact('model', $name));"));
+        eq("no parameters", "", passed("$this->render('index');"));
+        eq("array in variable", "model indirect", passed("$params = ['model' => $m]; $this->render('index', $params);"));
+        eq("compact in variable", "user indirect", passed("$params = compact('user'); $this->render('index', params: $params);"));
+        eq("variable changed before render", " incomplete", passed("$params = ['model' => $m]; $params['extra'] = 1; $this->render('index', $params);"));
+        eq("branch-only variable", " incomplete", passed("if ($x) { $params = ['a' => 1]; } $this->render('index', $params);"));
+        eq("dynamic key", "a incomplete", passed("$this->render('index', ['a' => 1, $key => 2]);"));
+        eq("array spread", "a incomplete", passed("$this->render('index', ['a' => 1, ...$more]);"));
+        eq("argument unpacking", " incomplete", passed("$this->render(...$arguments);"));
+        eq("function result", " incomplete", passed("$this->render('index', array_merge($a, $b));"));
+        eq("named view", "'index'", RenderParameters.view(call(php("$this->render(params: [], view: 'index');"),"render")).getText());
+        var compactFile = php("$model = new \\app\\User(); $this->render('index', compact('model'));");
+        eq("compact value is local definition", "new \\app\\User()", RenderParameters.of(call(compactFile,"render")).entries().getFirst().value().getText());
+        var named = call(php("$this->render(view: 'index', /* keep */ params: []);"),"render");
+        RenderParameters.deleteArgument(RenderParameters.of(named).argument());
+        eq("delete named argument keeps others and comment", "$this->render(view: 'index' /* keep */)", named.getText());
+        var positional = call(php("$this->render('index', []);"),"render");
+        RenderParameters.deleteArgument(RenderParameters.of(positional).argument());
+        eq("delete positional argument", "$this->render('index')", positional.getText());
+    }
     private static void incomplete() {
         for (String code:List.of("$x->with('","$x->with(['orders' =>", "$this->hasMany(", "$this->render(params:","$x->joinWith(['orders.", "User::find()->joinWith(['orders' => function($q) { $q->alias(", "User::find()->where(['and', ['", "$r = User::find()->asArray()->one(); $r['", "foreach (User::find()->select(['id' =>","$a=$a; $a->with('x');", "\\yii\\grid\\GridView::widget(['columns'=>[['attribute'=>'", "\\yii\\widgets\\DetailView::widget(['model'=>new", "\\yii\\grid\\GridView::widget(['columns'=>[['value'=>fn($row)=>")) {
             var file=php(code);
             for (var str:PsiTreeUtil.findChildrenOfType(file,StringLiteralExpression.class)) {
                 RelationContext.of(str);
+                var render = PsiTreeUtil.getParentOfType(str, MethodReference.class); if (render != null) { RenderParameters.of(render); RenderParameters.view(render); }
                 var columnCall = QueryAliases.columnCall(str); if (columnCall != null) new QueryAliases(resolver).visible(columnCall);
                 widgets.models(WidgetContext.of(str));
             }

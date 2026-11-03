@@ -8,7 +8,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.ArrayUtil;
-import com.intellij.util.indexing.FileBasedIndex;
 import com.jetbrains.php.lang.inspections.PhpInspection;
 import com.jetbrains.php.lang.psi.elements.MethodReference;
 import com.jetbrains.php.lang.psi.elements.StringLiteralExpression;
@@ -19,7 +18,8 @@ import io.github.byscrimm.yii2insight.utils.Yii2InsightSettings;
 import io.github.byscrimm.yii2insight.views.entities.ViewInfo;
 import io.github.byscrimm.yii2insight.views.entities.ViewResolve;
 import io.github.byscrimm.yii2insight.views.entities.ViewResolveFrom;
-import io.github.byscrimm.yii2insight.views.index.ViewFileIndex;
+import io.github.byscrimm.yii2insight.views.index.ViewFiles;
+import io.github.byscrimm.yii2insight.views.util.RenderParameters;
 import io.github.byscrimm.yii2insight.views.util.RenderUtil;
 import io.github.byscrimm.yii2insight.views.util.ViewUtil;
 import org.jetbrains.annotations.NotNull;
@@ -47,8 +47,8 @@ final public class MissedViewInspection extends PhpInspection {
                 }
 
                 if (ArrayUtil.contains(reference.getName(), ViewUtil.renderMethods)) {
-                    if (reference.getParameters().length > 0) {
-                        final PsiElement pathParameter = reference.getParameters()[0];
+                    if (RenderParameters.view(reference) != null) {
+                        final PsiElement pathParameter = RenderParameters.view(reference);
                         final ViewResolve resolve = ViewUtil.resolveView(pathParameter);
                         if (resolve == null) {
                             return;
@@ -60,8 +60,7 @@ final public class MissedViewInspection extends PhpInspection {
                         }
 
                         final Project project = reference.getProject();
-                        final Collection<ViewInfo> views = FileBasedIndex.getInstance()
-                                .getValues(ViewFileIndex.identity, key, GlobalSearchScope.projectScope(project));
+                        final Collection<ViewInfo> views = ViewFiles.find(project, key, GlobalSearchScope.projectScope(project));
 
                         final String application = YiiApplicationUtils.getApplicationName(reference.getContainingFile());
                         final boolean localViewSearch;
