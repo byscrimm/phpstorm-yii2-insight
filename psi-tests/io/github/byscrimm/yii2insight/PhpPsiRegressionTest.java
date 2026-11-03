@@ -515,7 +515,17 @@ public final class PhpPsiRegressionTest {
         eq("hasOne nested row", "id,name", rowKeys(file,"$city['region']"));
         eq("hasMany nested rows", "id,name", rowKeys(file,"$city['streets'][0]"));
         file = php("namespace rows; $city = City::find()->with(['region' => function ($q) { $q->select('id'); }])->asArray()->one(); $city['?'];");
-        eq("relation callback keeps nested keys unknown", "id,region,region_id,title", rowKeys(file,"$city"));
+        eq("callback select limits nested keys", "id,region_id,region{}[id],title", rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->with(['region' => function ($q) { $q->andWhere(['id' => 1]); }])->asArray()->one(); $city['?'];");
+        eq("callback without select keeps related columns", "id,region_id,region{}[id, name],title", rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->with(['streets' => function ($q) { $q->select('id')->addSelect(['label' => 'name']); }])->asArray()->one(); $city['?'];");
+        eq("callback select and addSelect on hasMany", "id,region_id,streets[][id, label],title", rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->with(['region' => function ($q) { $q->select($columns); }])->asArray()->one(); $city['?'];");
+        eq("dynamic callback select", "id,region,region_id,title", rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->with(['region' => function ($q) { scope($q); }])->asArray()->one(); $city['?'];");
+        eq("callback parameter passed elsewhere", "id,region,region_id,title", rowKeys(file,"$city"));
+        file = php("namespace rows; $city = City::find()->with(['region' => fn ($q) => $q->select('name')])->asArray()->one(); $city['?'];");
+        eq("arrow function callback select", "id,region_id,region{}[name],title", rowKeys(file,"$city"));
         file = php("namespace rows; $rows = City::find()->asArray()->all(); foreach ($rows as $row) { $row = $other; $row['?']; }");
         eq("reassigned loop value", null, rowKeys(file,"$row"));
         file = php("namespace rows; $city = City::find()->asArray()->one(); if ($x) { $city = []; } $city['?'];");

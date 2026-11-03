@@ -182,12 +182,48 @@ public final class ArrayRows {
             for (var relation : resolver.atPath(models,"")) {
                 if (!relation.name().equals(first)) continue;
                 Boolean many = many(relation.getter());
-                // A relation callback may change its select, so nested keys stay unknown there.
-                boolean callback = spec.getParent() instanceof PhpPsiElement wrapper && wrapper.getParent() instanceof ArrayHashElement;
-                Row nested = many == null || callback ? null : new Row(attributes(relation.targets()), many);
-                keys.put(first, nested);
+                Map<String,Row> nested = attributes(relation.targets());
+                // A callback on this relation (not on a deeper path segment) may select its own columns.
+                ArrayHashElement hash = PsiTreeUtil.getParentOfType(spec,ArrayHashElement.class);
+                if (hash != null && hash.getKey() != null && PsiTreeUtil.isAncestor(hash.getKey(),spec,false) && !parsed[0].contains("."))
+                    nested = callback(hash.getValue(), relation.targets(), nested);
+                keys.put(first, many == null || nested == null ? null : new Row(nested, many));
             }
         }
+    }
+
+    /**
+     * Keys selected by {@code function ($q) { $q->select(...); }}. Without a select the related
+     * model's columns stay; any other use of the parameter or a dynamic select makes them unknown.
+     */
+    private Map<String,Row> callback(PsiElement value, List<PhpClass> models, Map<String,Row> columns) {
+        Function function = value instanceof Function f ? f : PsiTreeUtil.findChildOfType(value,Function.class);
+        if (function == null) return null;
+        if (function.getParameters().length == 0) return columns;
+        String parameter = function.getParameters()[0].getName();
+        List<MethodReference> calls = new ArrayList<>();
+        for (Variable variable : PsiTreeUtil.findChildrenOfType(function,Variable.class)) {
+            ProgressManager.checkCanceled();
+            if (!parameter.equals(variable.getName()) || PsiTreeUtil.getParentOfType(variable,Function.class) != function) continue;
+            PsiElement element = variable;
+            while (element.getParent() instanceof MethodReference ref && ref.getClassReference() == element) {
+                if (ref.getName() == null || !CHAIN.contains(ref.getName())) return null;
+                calls.add(ref);
+                element = ref;
+            }
+            if (element == variable) return null; // passed, assigned or returned: not statically followed
+        }
+        calls.sort(Comparator.comparingInt(ref -> ref.getTextRange().getEndOffset()));
+        Map<String,Row> keys = null;
+        for (MethodReference ref : calls) {
+            if ("select".equals(ref.getName())) keys = new LinkedHashMap<>();
+            if ("select".equals(ref.getName()) || "addSelect".equals(ref.getName())) {
+                if (keys == null) keys = new LinkedHashMap<>();
+                if (!select(ref, models, keys)) return null;
+            }
+            if ("asArray".equals(ref.getName())) return null;
+        }
+        return keys == null ? columns : keys;
     }
 
     private static Boolean many(Method getter) {
