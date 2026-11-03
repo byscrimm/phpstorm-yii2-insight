@@ -1,17 +1,22 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-rc.8
 
-- Migrations run as a cancellable background task; cancelling stops the yii process, and a non-zero exit code is shown in the console and used for migration status.
-- `Yii::createObject()` type resolution no longer runs type inference inside the type provider's `getType`.
-- Routes include `controllerMap` entries from config and external actions inherited through `parent::actions()` with `unset`/added ids (REST `ActiveController`).
-- Translations follow configured `i18n.translations` PhpMessageSource `basePath` and `fileMap` and list the application `language` first. Ctrl+Click on a `Yii::t()` message opens its entries in all locales. New inspections: ICU placeholder/parameter mismatch (enabled) and a missing message with a fix adding it to all category files (disabled by default).
-- Components defined in a statically required file (`'components' => require __DIR__ . '/components.php'`, also inside `ArrayHelper::merge` and with `dirname(__DIR__, n)`) are completed and typed for `Yii::$app`. `Yii::$app->get('name')` returns the component type. Container definitions (`container.definitions/singletons`, `Yii::$container->set/setSingleton` in config) add the implementation type to `Yii::createObject(X::class)` and `Yii::$container->get(X::class)`.
-- Fixed: string class names with escaped backslashes (`'app\\models\\User'`) and component factories written as closures are now resolved (components index version 8).
+Second public pre-release. It contains 1.0.0-rc.7 plus the roadmap stages below
+(query aliases, asArray rows, views, config/DI, routes/i18n, performance). Isolated-IDE
+runtime scenarios for this exact ZIP are pending; the stable 1.0.0 release follows after they pass.
+Indexes are rebuilt once after the update (view index 35, components index 8).
+
+- Query builder completion offers explicit table aliases and documented `alias.attribute` columns in `where`, `andWhere`, `orWhere`, `having`, `andHaving`, `select`, `addSelect`, `orderBy`, `addOrderBy`, `groupBy` and `addGroupBy`. Aliases come from `alias()`, `joinWith('relation alias')` / `AS` and `alias()` inside `joinWith()` callbacks; joined models are taken from relation declarations. Conflicting or dynamic aliases, unknown query methods and subqueries are not guessed. Relation properties and getters are not offered as columns.
+- `$row['…']` completion for `asArray()->one()` / `asArray()->all()` rows, through local variables, `$rows[0]` and `foreach`. Keys come from `select`/`addSelect` (renamed columns, `alias.column`, `*`, `alias.*`) or documented model columns, plus first-level eager relations as nested rows, honouring `select`/`addSelect` inside the relation callback. `asArray(false)`, dynamic `select`/`asArray`, reassigned values and unknown query methods yield no keys; value types are not inferred.
 - View inspections, navigation and PHPDoc fixes read render parameters from named arguments (`params:`, `view:`), `compact()` and an unmodified local array variable. Incomplete parameter sets (dynamic keys, spreads, function results, changed variables) are not diagnosed; parameters held in a variable get no quick fix and no unused warnings. Adding and removing parameters keeps other arguments and comments, including named `params:`.
 - The view index no longer depends on project settings: view keys, applications and themes are resolved at query time (index version 35), so changing the Yii root or theme path map takes effect without an index rebuild.
-- `$row['…']` completion for `asArray()->one()` / `asArray()->all()` rows, through local variables, `$rows[0]` and `foreach`. Keys come from `select`/`addSelect` (renamed columns, `alias.column`, `*`, `alias.*`) or documented model columns, plus first-level eager relations as nested rows, honouring `select`/`addSelect` inside the relation callback. `asArray(false)`, dynamic `select`/`asArray`, reassigned values and unknown query methods yield no keys; value types are not inferred.
-- Query builder completion offers explicit table aliases and documented `alias.attribute` columns in `where`, `andWhere`, `orWhere`, `having`, `andHaving`, `select`, `addSelect`, `orderBy`, `addOrderBy`, `groupBy` and `addGroupBy`. Aliases come from `alias()`, `joinWith('relation alias')` / `AS` and `alias()` inside `joinWith()` callbacks; joined models are taken from relation declarations. Conflicting or dynamic aliases, unknown query methods and subqueries are not guessed. Relation properties and getters are not offered as columns.
+- Components defined in a statically required file (`'components' => require __DIR__ . '/components.php'`, also inside `ArrayHelper::merge` and with `dirname(__DIR__, n)`) are completed and typed for `Yii::$app`. `Yii::$app->get('name')` returns the component type. Container definitions (`container.definitions/singletons`, `Yii::$container->set/setSingleton` in config) add the implementation type to `Yii::createObject(X::class)` and `Yii::$container->get(X::class)`.
+- Fixed: string class names with escaped backslashes (`'app\\models\\User'`) and component factories written as closures are now resolved (components index version 8).
+- Routes include `controllerMap` entries from config and external actions inherited through `parent::actions()` with `unset`/added ids (REST `ActiveController`).
+- Translations follow configured `i18n.translations` PhpMessageSource `basePath` and `fileMap` and list the application `language` first. Ctrl+Click on a `Yii::t()` message opens its entries in all locales. New inspections: ICU placeholder/parameter mismatch (enabled) and a missing message with a fix adding it to all category files (disabled by default).
+- Migrations run as a cancellable background task; cancelling stops the yii process, and a non-zero exit code is shown in the console and used for migration status.
+- `Yii::createObject()` type resolution no longer runs type inference inside the type provider's `getType`.
 
 ## 1.0.0-rc.7
 
