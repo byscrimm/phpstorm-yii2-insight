@@ -5,7 +5,6 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.jetbrains.php.PhpIndex;
 import com.jetbrains.php.lang.psi.elements.*;
-import com.jetbrains.php.lang.psi.elements.impl.VariableImpl;
 import com.jetbrains.php.lang.psi.resolve.types.PhpType;
 import com.jetbrains.php.lang.psi.resolve.types.PhpTypeProvider4;
 import io.github.byscrimm.yii2insight.common.ClassUtils;
@@ -41,9 +40,10 @@ public class YiiTypeProvider implements PhpTypeProvider4 {
                 String signature = ((MethodReference)psiElement).getSignature();
                 return new PhpType().add("#" + this.getKey() + signature + TRIM_KEY + ((FieldReference) firstParam).getSignature());
             }
-            // Case: Yii::createObject($array_var)
-            if (firstParam instanceof Variable  && ((VariableImpl) firstParam).getType().getTypes().contains("\\array") ) {
-                firstParam = getArrayCreationByVariableRef(firstParam);
+            // Case: Yii::createObject($array_var). Local syntax only: no type inference inside getType.
+            if (firstParam instanceof Variable variable
+                    && io.github.byscrimm.yii2insight.common.LocalPhpValues.resolve(variable) instanceof ArrayCreationExpression array) {
+                firstParam = array;
             }
             if (firstParam instanceof ArrayCreationExpression) {
                 return getClassByArrayCreationOptimized((ArrayCreationExpression) firstParam);
@@ -163,23 +163,6 @@ public class YiiTypeProvider implements PhpTypeProvider4 {
         }
     }
 
-    @NotNull
-    private PhpPsiElement getArrayCreationByVariableRef(PhpPsiElement firstParam) {
-        Collection<? extends PhpNamedElement> localResolvedVariables = ((VariableImpl) firstParam).resolveLocal();
-        if (localResolvedVariables.isEmpty()) return firstParam;
-        PhpNamedElement firstElem = localResolvedVariables.iterator().next();
-        if (firstElem instanceof Variable) {
-            Variable variableDecl = (Variable)firstElem;
-            if (variableDecl.getParent() != null) {
-                PsiElement array = variableDecl.getParent().getLastChild();
-                if (array instanceof ArrayCreationExpression) {
-                    firstParam = (ArrayCreationExpression) array;
-                }
-            }
-        }
-        return firstParam;
-    }
-
     @Nullable
     private PhpType getClassByArrayCreationOptimized(ArrayCreationExpression arrayCreationExpr) {
         for (ArrayHashElement elem : arrayCreationExpr.getHashElements()) {
@@ -192,15 +175,14 @@ public class YiiTypeProvider implements PhpTypeProvider4 {
     }
 
     private PhpType getClass(PhpPsiElement elem) {
-        if (elem instanceof ClassConstantReference) {
-            if (elem.getName() != null && elem.getName().equals("class")
-                    && ((ClassConstantReference) elem).getClassReference() != null)
-                return ((ClassConstantReference) elem).getClassReference().getType();
+        // The written class name is enough; ClassReference.getType() would run inference.
+        if (elem instanceof ClassConstantReference constant && "class".equals(constant.getName())
+                && constant.getClassReference() instanceof ClassReference clazz && clazz.getFQN() != null) {
+            return new PhpType().add(clazz.getFQN());
         }
-        if (elem instanceof MethodReference) {
-            if (elem.getName() != null && elem.getName().equals("className")
-                    && ((MethodReference) elem).getClassReference() != null)
-                return ((MethodReference) elem).getClassReference().getType();
+        if (elem instanceof MethodReference method && "className".equals(method.getName())
+                && method.getClassReference() instanceof ClassReference clazz && clazz.getFQN() != null) {
+            return new PhpType().add(clazz.getFQN());
         }
 
         return null;

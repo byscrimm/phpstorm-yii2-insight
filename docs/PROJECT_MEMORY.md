@@ -108,9 +108,6 @@ Production Java is under `src/io/github/byscrimm/yii2insight/`; extension regist
 
 ## Known violations and next work
 
-- `YiiTypeProvider.getType`
-  runs local inference; migration cancellation ignores the progress indicator; migration
-  exit code is unused.
 - Deprecated API usages remain; full-index Find Usages/Rename and completion UI are not
   automated.
 - Roadmap order: SQL aliases/attributes, asArray result keys, controller-to-view flow,

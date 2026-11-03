@@ -61,6 +61,17 @@ public abstract class CommandBase implements Runnable {
 
     abstract DefaultMutableTreeNode findTreeNode(Migration migration);
 
+    private com.intellij.openapi.progress.ProgressIndicator myIndicator;
+
+    /** The background task's indicator; cancelling it stops the running yii process. */
+    public void setIndicator(com.intellij.openapi.progress.ProgressIndicator indicator) {
+        myIndicator = indicator;
+    }
+
+    boolean isCanceled() {
+        return myIndicator != null && myIndicator.isCanceled();
+    }
+
     Integer executeProcess(@NotNull ProcessHandler processHandler) {
         if (myConsoleView != null && myConsoleView.getContentSize() > 0) {
             myConsoleView.print("\n*************************************\n\n", ConsoleViewContentType.NORMAL_OUTPUT);
@@ -76,8 +87,9 @@ public abstract class CommandBase implements Runnable {
         }
 
         while (!processHandler.waitFor(250)) {
-            if (myProject.isDisposed() || Thread.currentThread().isInterrupted()) {
+            if (myProject.isDisposed() || Thread.currentThread().isInterrupted() || isCanceled()) {
                 processHandler.destroyProcess();
+                processHandler.waitFor(5000);
                 break;
             }
         }

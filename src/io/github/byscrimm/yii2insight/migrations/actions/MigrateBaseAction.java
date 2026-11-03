@@ -84,11 +84,16 @@ abstract class MigrateBaseAction extends AnActionButton {
             command.setApplication(application);
         }
 
-        application.executeOnPooledThread(() -> {
-            for (CommandBase command : commands) {
-                command.run();
+        new com.intellij.openapi.progress.Task.Backgroundable(project, "Running Yii migrations", true) {
+            @Override
+            public void run(@org.jetbrains.annotations.NotNull com.intellij.openapi.progress.ProgressIndicator indicator) {
+                for (CommandBase command : commands) {
+                    if (indicator.isCanceled() || project.isDisposed()) return;
+                    command.setIndicator(indicator);
+                    command.run();
+                }
             }
-        });
+        }.queue();
     }
 
     boolean enableDownButtons(DefaultMutableTreeNode treeNode) {
