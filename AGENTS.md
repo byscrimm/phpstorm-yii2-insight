@@ -6,8 +6,8 @@
 - Read `docs/PROJECT_MEMORY.md` for the latest handoff, `DEVELOPMENT_PLAN.md` for scope,
   and the relevant source before implementation. Memory is context, not proof.
 - This is a Java plugin for JetBrains IDEs, not a PHP application or a Claude Code plugin.
-- `origin` is `git@github.com:byscrimm/phpstorm-yii2-insight.git`;
-  `upstream` is `https://github.com/vxdy/Yii2-Support-Extended.git`.
+- `origin` is `git@github.com:byscrimm/phpstorm-yii2-insight.git`. The project is standalone:
+  it left the fork network, and predecessor repositories are credited, not tracked as remotes.
   The default branch is `master`; use meaningful branches such as `feature/view-parameters`, `fix/relation-navigation`
   or `build/docker-packaging`; never use agent-named prefixes such as `claude/`.
 - The maintainer delegates implementation and repository maintenance to the AI agent.
@@ -54,7 +54,7 @@
   Keep upstream credits; do not read, migrate or overwrite legacy settings automatically.
 - Do not broaden IDE compatibility based only on compilation. Check the actual
   target SDK and official JetBrains documentation when an API is uncertain.
-- Preserve `LICENSE.md` and credit both upstream projects. All updates to this fork
+- Preserve `LICENSE.md` and credit both predecessor projects. All updates to this project
   are developed with AI assistance; distinguish this from authorship of upstream code.
 - Do not add AI network services, API keys, telemetry or PHP execution as a side
   effect of AI-assisted development. The plugin's analysis runs inside the IDE.

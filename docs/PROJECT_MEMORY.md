@@ -8,7 +8,7 @@ Superseded RC history lives in `docs/verification/` and Git history, not here.
 
 - Repository: `byscrimm/phpstorm-yii2-insight`, default branch `master`.
 - 2026-11-04: repository left the fork network and was renamed from `phpstorm-yii2-support` so GitHub search indexes it. PRs to upstream are no longer possible; credits stay in `NOTICE.md`, `AUTHORS.md` and README.
-- Fork of `vxdy/Yii2-Support-Extended`, itself based on `nvlad/yii2support`.
+- Standalone project derived from `vxdy/Yii2-Support-Extended`, itself based on `nvlad/yii2support`; no `upstream` remote.
   Upstream base when connected: `cd9cb4485e457f12a13faf2f0632ca861d8b2685`.
 - Name Yii2 Insight; vendor by_scrimm; ID/package `io.github.byscrimm.yii2insight`;
   settings `yii2-insight.xml`. Legacy settings are never read or migrated. See IDENTITY.md.

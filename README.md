@@ -88,7 +88,10 @@ Output goes to `build/distributions`. Details: [Contributing](CONTRIBUTING.md),
 
 ## Credits and license
 
-Thanks to [Vxdy and contributors](https://github.com/vxdy/Yii2-Support-Extended) and
-[Vladislav Nikishin (NVlad) and contributors](https://github.com/nvlad/yii2support).
-See [AUTHORS.md](AUTHORS.md), [NOTICE.md](NOTICE.md), [LICENSE.md](LICENSE.md) and the
+Thank you to the authors this plugin builds on:
+
+- [Vladislav Nikishin (NVlad)](https://github.com/nvlad/yii2support) — original author, who created the foundation with Yii2 Support.
+- [Vxdy and contributors](https://github.com/vxdy/Yii2-Support-Extended) — continued support with Yii2 Support Extended.
+
+Their code is used under the original BSD license. See [AUTHORS.md](AUTHORS.md), [NOTICE.md](NOTICE.md), [LICENSE.md](LICENSE.md) and the
 [upstream changelog](docs/UPSTREAM_CHANGELOG.md). Not an official Yii or JetBrains product.

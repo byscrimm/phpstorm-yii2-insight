@@ -76,4 +76,9 @@ Docker: `make docker`. С проверкой Plugin Verifier: `make docker GRADL
 
 [Подробные инструкции сборки](CONTRIBUTING.md) · [технические результаты](docs/verification/release-1.0.0.md) · [правила участия](CONTRIBUTING.md) · [правила выпуска](docs/RELEASING.md).
 
-Сохранены [BSD-лицензия](LICENSE.md), [авторы](AUTHORS.md) и [история upstream](docs/UPSTREAM_CHANGELOG.md). Yii2 Insight — общественный проект, не официальный продукт Yii или JetBrains.
+Спасибо авторам, на работе которых основан плагин:
+
+- [Владислав Никишин (NVlad)](https://github.com/nvlad/yii2support) — изначальный автор, создавший основу в Yii2 Support.
+- [Vxdy и контрибьюторы](https://github.com/vxdy/Yii2-Support-Extended) — продолжили поддержку в Yii2 Support Extended.
+
+Их код используется по исходной BSD-лицензии. Сохранены [BSD-лицензия](LICENSE.md), [авторы](AUTHORS.md) и [история upstream](docs/UPSTREAM_CHANGELOG.md). Yii2 Insight — общественный проект, не официальный продукт Yii или JetBrains.
