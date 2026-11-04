@@ -12,6 +12,6 @@ The fork is maintained by by_scrimm with AI assistance. It is not an official
 product of JetBrains or Yii and does not imply endorsement by the original authors.
 Names of third-party products identify compatibility and project provenance only.
 
-Repository: https://github.com/byscrimm/phpstorm-yii2-support
+Repository: https://github.com/byscrimm/phpstorm-yii2-insight
 See AUTHORS.md for attribution. IDE libraries and development-only test dependencies
 are not redistributed in the plugin ZIP.

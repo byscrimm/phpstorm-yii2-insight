@@ -1,4 +1,4 @@
-# Working on phpstorm-yii2-support
+# Working on phpstorm-yii2-insight
 
 ## Start here
 
@@ -6,7 +6,7 @@
 - Read `docs/PROJECT_MEMORY.md` for the latest handoff, `DEVELOPMENT_PLAN.md` for scope,
   and the relevant source before implementation. Memory is context, not proof.
 - This is a Java plugin for JetBrains IDEs, not a PHP application or a Claude Code plugin.
-- `origin` is `git@github.com:byscrimm/phpstorm-yii2-support.git`;
+- `origin` is `git@github.com:byscrimm/phpstorm-yii2-insight.git`;
   `upstream` is `https://github.com/vxdy/Yii2-Support-Extended.git`.
   The default branch is `master`; use meaningful branches such as `feature/view-parameters`, `fix/relation-navigation`
   or `build/docker-packaging`; never use agent-named prefixes such as `claude/`.

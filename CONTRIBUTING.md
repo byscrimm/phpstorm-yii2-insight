@@ -7,8 +7,8 @@ Implementation priorities and current limitations are in [the plan](DEVELOPMENT_
 ## Checkout and build
 
 ```sh
-git clone https://github.com/byscrimm/phpstorm-yii2-support.git
-cd phpstorm-yii2-support
+git clone https://github.com/byscrimm/phpstorm-yii2-insight.git
+cd phpstorm-yii2-insight
 git remote add upstream https://github.com/vxdy/Yii2-Support-Extended.git
 git switch -c feature/your-topic
 ```

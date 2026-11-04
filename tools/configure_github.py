@@ -7,7 +7,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
-REPO = "byscrimm/phpstorm-yii2-support"
+REPO = "byscrimm/phpstorm-yii2-insight"
 
 
 def api(endpoint, method="GET", body=None):

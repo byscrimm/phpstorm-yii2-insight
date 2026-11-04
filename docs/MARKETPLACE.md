@@ -12,8 +12,8 @@ The maintainer performs the Marketplace upload.
 | Version | 1.0.0 |
 | Compatibility | PhpStorm 2026.2.2 (262.10315.130) through 2026.2.x |
 | License | BSD-3-Clause; use the preserved LICENSE.md text |
-| Source / homepage | https://github.com/byscrimm/phpstorm-yii2-support |
-| Support | https://github.com/byscrimm/phpstorm-yii2-support/issues |
+| Source / homepage | https://github.com/byscrimm/phpstorm-yii2-insight |
+| Support | https://github.com/byscrimm/phpstorm-yii2-insight/issues |
 | Suggested tags | PHP, Yii2, Code completion, Navigation, Refactoring |
 | Description | Copy MARKETPLACE_DESCRIPTION.html; the same HTML is embedded in the plugin descriptor |
 

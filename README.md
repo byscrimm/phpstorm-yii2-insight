@@ -61,7 +61,7 @@ Navigate `region` to `City::getRegion()`. Start Rename on `getRegion()` or its P
 
 ## Installation
 
-1. Download `yii2-insight-<version>.zip` from [GitHub Releases](https://github.com/byscrimm/phpstorm-yii2-support/releases) (not the source ZIP).
+1. Download `yii2-insight-<version>.zip` from [GitHub Releases](https://github.com/byscrimm/phpstorm-yii2-insight/releases) (not the source ZIP).
    Until the first release is published, build the ZIP yourself (see Build).
 2. **Settings → Plugins → ⚙ → Install Plugin from Disk**, choose the ZIP, restart.
 3. Disable other Yii2 Support plugins. Legacy settings are not migrated.
@@ -71,7 +71,7 @@ Navigate `region` to `City::getRegion()`. Start Rename on `getRegion()` or its P
 Analysis is conservative: dynamic PHP, custom query scopes/factories, provider mutations
 and some widget configurations may stay unresolved. Rename coordinates the getter and its
 local PHPDoc, not every subclass. Planned work is in the [roadmap](DEVELOPMENT_PLAN.md).
-**Bugs may remain** — report them in [Issues](https://github.com/byscrimm/phpstorm-yii2-support/issues)
+**Bugs may remain** — report them in [Issues](https://github.com/byscrimm/phpstorm-yii2-insight/issues)
 with IDE/plugin versions and a minimal example.
 
 ## Build

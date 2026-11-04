@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   checks:
-    if: github.repository == 'byscrimm/phpstorm-yii2-support'
+    if: github.repository == 'byscrimm/phpstorm-yii2-insight'
     uses: ./.github/workflows/build-and-verify.yml
     with:
       release: true

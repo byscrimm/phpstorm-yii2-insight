@@ -13,6 +13,6 @@ modern IDE integration and reproducible verification infrastructure.
 Maintained by by_scrimm with AI-assisted development. Original authorship and BSD
 license are preserved. No AI account, key or external AI service is required to use it.
 Main workflows were manually tested during release-candidate development; bugs may
-remain. [Report issues](https://github.com/byscrimm/phpstorm-yii2-support/issues).
+remain. [Report issues](https://github.com/byscrimm/phpstorm-yii2-insight/issues).
 
 [Full capabilities](README.md) · [Provenance](docs/FEATURES.md) · [Changelog](CHANGELOG.md)

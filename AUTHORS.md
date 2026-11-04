@@ -5,7 +5,7 @@
 - **Vxdy and contributors** — Yii2 Support Extended:
   https://github.com/vxdy/Yii2-Support-Extended.
 - **by_scrimm** (GitHub: byscrimm) — publisher and maintainer of this independent fork:
-  https://github.com/byscrimm/phpstorm-yii2-support.
+  https://github.com/byscrimm/phpstorm-yii2-insight.
 
 The preserved Git history records individual contributions; this list is not an
 exhaustive substitute for it. Existing authorship and copyright are retained.

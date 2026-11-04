@@ -60,7 +60,7 @@ build-report.json, RELEASE_NOTES.md and test-reports.tar.gz. The report records 
 commit, dirty status, SDK, workflow URL, archive size/hash, executed JUnit methods,
 regression checks, verifier status and exact runtime evidence (or not_run).
 GitHub also stores ZIP provenance attestations. Verify with
-`gh attestation verify <zip> --repo byscrimm/phpstorm-yii2-support`.
+`gh attestation verify <zip> --repo byscrimm/phpstorm-yii2-insight`.
 
 Use METRICS.md for what counts as measured. CI artifacts expire after 30 days;
 published release assets are the durable record. Build logs can contain paths:

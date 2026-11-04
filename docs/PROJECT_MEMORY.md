@@ -6,7 +6,8 @@ Superseded RC history lives in `docs/verification/` and Git history, not here.
 
 ## Identity and intent
 
-- Repository: `byscrimm/phpstorm-yii2-support`, default branch `master`.
+- Repository: `byscrimm/phpstorm-yii2-insight`, default branch `master`.
+- 2026-11-04: repository left the fork network and was renamed from `phpstorm-yii2-support` so GitHub search indexes it. PRs to upstream are no longer possible; credits stay in `NOTICE.md`, `AUTHORS.md` and README.
 - Fork of `vxdy/Yii2-Support-Extended`, itself based on `nvlad/yii2support`.
   Upstream base when connected: `cd9cb4485e457f12a13faf2f0632ca861d8b2685`.
 - Name Yii2 Insight; vendor by_scrimm; ID/package `io.github.byscrimm.yii2insight`;
@@ -19,7 +20,7 @@ Superseded RC history lives in `docs/verification/` and Git history, not here.
 
 - `master` = `0d5fed9`: PR #1 (1.0.0 integration), PR #3 (each/batch types, audit fixes,
   docs cleanup) and PR #4 (version `1.0.0-rc.7`) are merged.
-- Published pre-release `v1.0.0-rc.7` (2026-11-03): https://github.com/byscrimm/phpstorm-yii2-support/releases/tag/v1.0.0-rc.7
+- Published pre-release `v1.0.0-rc.7` (2026-11-03): https://github.com/byscrimm/phpstorm-yii2-insight/releases/tag/v1.0.0-rc.7
   ZIP SHA-256 `2ab7a61af10e7de1ef4db95bc8bb2edd7a56e436c7a43d0d92e7418ceb398b03`; Docker suites
   (155 core / 170 PSI) and official Plugin Verifier passed in the release run; checksum and
   provenance attestation verified locally; full IDE runtime scenarios `not_run`.
