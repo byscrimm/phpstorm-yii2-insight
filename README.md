@@ -61,7 +61,7 @@ Navigate `region` to `City::getRegion()`. Start Rename on `getRegion()` or its P
 
 ## Installation
 
-1. Download `yii2-insight-<version>.zip` from [GitHub Releases](https://github.com/byscrimm/phpstorm-yii2-support/releases) (not the source ZIP).
+1. Download `yii2-insight-<version>.zip` from [GitHub Releases](https://github.com/byscrimm/phpstorm-yii2-insight/releases) (not the source ZIP).
    Until the first release is published, build the ZIP yourself (see Build).
 2. **Settings → Plugins → ⚙ → Install Plugin from Disk**, choose the ZIP, restart.
 3. Disable other Yii2 Support plugins. Legacy settings are not migrated.
@@ -71,7 +71,7 @@ Navigate `region` to `City::getRegion()`. Start Rename on `getRegion()` or its P
 Analysis is conservative: dynamic PHP, custom query scopes/factories, provider mutations
 and some widget configurations may stay unresolved. Rename coordinates the getter and its
 local PHPDoc, not every subclass. Planned work is in the [roadmap](DEVELOPMENT_PLAN.md).
-**Bugs may remain** — report them in [Issues](https://github.com/byscrimm/phpstorm-yii2-support/issues)
+**Bugs may remain** — report them in [Issues](https://github.com/byscrimm/phpstorm-yii2-insight/issues)
 with IDE/plugin versions and a minimal example.
 
 ## Build
@@ -88,7 +88,10 @@ Output goes to `build/distributions`. Details: [Contributing](CONTRIBUTING.md),
 
 ## Credits and license
 
-Thanks to [Vxdy and contributors](https://github.com/vxdy/Yii2-Support-Extended) and
-[Vladislav Nikishin (NVlad) and contributors](https://github.com/nvlad/yii2support).
-See [AUTHORS.md](AUTHORS.md), [NOTICE.md](NOTICE.md), [LICENSE.md](LICENSE.md) and the
+Thank you to the authors this plugin builds on:
+
+- [Vladislav Nikishin (NVlad)](https://github.com/nvlad/yii2support) — original author, who created the foundation with Yii2 Support.
+- [Vxdy and contributors](https://github.com/vxdy/Yii2-Support-Extended) — continued support with Yii2 Support Extended.
+
+Their code is used under the original BSD license. See [AUTHORS.md](AUTHORS.md), [NOTICE.md](NOTICE.md), [LICENSE.md](LICENSE.md) and the
 [upstream changelog](docs/UPSTREAM_CHANGELOG.md). Not an official Yii or JetBrains product.

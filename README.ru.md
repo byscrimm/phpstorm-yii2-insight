@@ -52,7 +52,7 @@ GridView::widget([
 
 ## Установка и настройка
 
-1. Скачайте `yii2-insight-<version>.zip` из [GitHub Releases](https://github.com/byscrimm/phpstorm-yii2-support/releases). ZIP исходников из Code → Download ZIP не подходит для установки. Пока первый релиз не опубликован, соберите ZIP сами (см. «Сборка»).
+1. Скачайте `yii2-insight-<version>.zip` из [GitHub Releases](https://github.com/byscrimm/phpstorm-yii2-insight/releases). ZIP исходников из Code → Download ZIP не подходит для установки. Пока первый релиз не опубликован, соберите ZIP сами (см. «Сборка»).
 2. Settings → Plugins → ⚙ → Install Plugin from Disk → выберите ZIP → перезапустите IDE.
 3. Отключите другие Yii2 Support-плагины.
 4. Откройте Settings → PHP → Yii2 Insight: настройте корень Yii, параметры views, datasource и команды миграций при необходимости.
@@ -61,7 +61,7 @@ ID плагина — `io.github.byscrimm.yii2insight`, настройки — `
 
 ## Надёжность и ограничения
 
-Основные сценарии проверялись вручную в изолированном PhpStorm 2026.2.2 во время подготовки кандидатов, дополнительно работают регрессии логики и PHP PSI. **Ошибки возможны.** Для [сообщения о проблеме](https://github.com/byscrimm/phpstorm-yii2-support/issues) укажите версии IDE/плагина и минимальный пример.
+Основные сценарии проверялись вручную в изолированном PhpStorm 2026.2.2 во время подготовки кандидатов, дополнительно работают регрессии логики и PHP PSI. **Ошибки возможны.** Для [сообщения о проблеме](https://github.com/byscrimm/phpstorm-yii2-insight/issues) укажите версии IDE/плагина и минимальный пример.
 
 Динамический PHP, произвольные Query-методы/фабрики, изменения провайдера после создания и некоторые конфигурации могут остаться без результата. Согласование Rename охватывает getter и его локальный PHPDoc; обновление документации всех подклассов не гарантируется. Генерация PHPDoc пропускает неоднозначные типы, смешанные hasOne/hasMany и режим массива.
 
@@ -76,4 +76,9 @@ Docker: `make docker`. С проверкой Plugin Verifier: `make docker GRADL
 
 [Подробные инструкции сборки](CONTRIBUTING.md) · [технические результаты](docs/verification/release-1.0.0.md) · [правила участия](CONTRIBUTING.md) · [правила выпуска](docs/RELEASING.md).
 
-Сохранены [BSD-лицензия](LICENSE.md), [авторы](AUTHORS.md) и [история upstream](docs/UPSTREAM_CHANGELOG.md). Yii2 Insight — общественный проект, не официальный продукт Yii или JetBrains.
+Спасибо авторам, на работе которых основан плагин:
+
+- [Владислав Никишин (NVlad)](https://github.com/nvlad/yii2support) — изначальный автор, создавший основу в Yii2 Support.
+- [Vxdy и контрибьюторы](https://github.com/vxdy/Yii2-Support-Extended) — продолжили поддержку в Yii2 Support Extended.
+
+Их код используется по исходной BSD-лицензии. Сохранены [BSD-лицензия](LICENSE.md), [авторы](AUTHORS.md) и [история upstream](docs/UPSTREAM_CHANGELOG.md). Yii2 Insight — общественный проект, не официальный продукт Yii или JetBrains.

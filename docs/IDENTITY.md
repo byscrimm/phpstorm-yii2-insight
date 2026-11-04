@@ -7,7 +7,7 @@ The maintainer authorized this independent identity on 2026-09-08.
 | Plugin name | Yii2 Insight |
 | Maintainer / vendor | by_scrimm |
 | Plugin ID and Java package | io.github.byscrimm.yii2insight |
-| GitHub repository | byscrimm/phpstorm-yii2-support |
+| GitHub repository | byscrimm/phpstorm-yii2-insight |
 | Distribution prefix | yii2-insight |
 | Project settings component / file | Yii2 Insight / yii2-insight.xml |
 | First stable version being prepared | 1.0.0 |

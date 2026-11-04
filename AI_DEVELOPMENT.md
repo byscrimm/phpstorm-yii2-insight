@@ -1,6 +1,6 @@
 # AI-assisted development
 
-`phpstorm-yii2-support` is a fork of
+`phpstorm-yii2-insight` is a fork of
 [vxdy/Yii2-Support-Extended](https://github.com/vxdy/Yii2-Support-Extended),
 which continues [nvlad/yii2support](https://github.com/nvlad/yii2support).
 

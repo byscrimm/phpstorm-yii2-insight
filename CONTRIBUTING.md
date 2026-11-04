@@ -1,15 +1,14 @@
 # Contributing
 
-This fork is maintained through AI-assisted development. Read
+Yii2 Insight is maintained through AI-assisted development. Read
 [AI_DEVELOPMENT.md](AI_DEVELOPMENT.md) and [AGENTS.md](AGENTS.md) before working on it.
 Implementation priorities and current limitations are in [the plan](DEVELOPMENT_PLAN.md).
 
 ## Checkout and build
 
 ```sh
-git clone https://github.com/byscrimm/phpstorm-yii2-support.git
-cd phpstorm-yii2-support
-git remote add upstream https://github.com/vxdy/Yii2-Support-Extended.git
+git clone https://github.com/byscrimm/phpstorm-yii2-insight.git
+cd phpstorm-yii2-insight
 git switch -c feature/your-topic
 ```
 
