@@ -1,6 +1,6 @@
 # Project memory
 
-Last updated: 2026-11-03. This is a dated handoff, not an evergreen test result.
+Last updated: 2026-11-05. This is a dated handoff, not an evergreen test result.
 Read `AGENTS.md` first; verify current source and configuration before making changes.
 Superseded RC history lives in `docs/verification/` and Git history, not here.
 
@@ -18,12 +18,11 @@ Superseded RC history lives in `docs/verification/` and Git history, not here.
 
 ## Current repository state
 
-- `master` = `0d5fed9`: PR #1 (1.0.0 integration), PR #3 (each/batch types, audit fixes,
-  docs cleanup) and PR #4 (version `1.0.0-rc.7`) are merged.
-- Published pre-release `v1.0.0-rc.7` (2026-11-03): https://github.com/byscrimm/phpstorm-yii2-insight/releases/tag/v1.0.0-rc.7
-  ZIP SHA-256 `2ab7a61af10e7de1ef4db95bc8bb2edd7a56e436c7a43d0d92e7418ceb398b03`; Docker suites
-  (155 core / 170 PSI) and official Plugin Verifier passed in the release run; checksum and
-  provenance attestation verified locally; full IDE runtime scenarios `not_run`.
+- `master` contains roadmap stages 4-9 (PRs #5-#11), rc.8 preparation (#12) and the rename (#13).
+- Published pre-release `v1.0.0-rc.8` (2026-11-05, commit `fd702a6`): https://github.com/byscrimm/phpstorm-yii2-insight/releases/tag/v1.0.0-rc.8
+  ZIP SHA-256 `da7f790d3a73a2b4c0f08426f53b0b237cd2fc6714c3112e13c81040f312dea8`; release run: 164 core / 282 PSI
+  checks and official Plugin Verifier passed; checksums and attestation verified locally; IDE runtime `not_run`.
+- Branch `release/1.0.0` prepares stable: version `1.0.0`, change notes, CHANGELOG 1.0.0 section moved to the top.
 - Stable `1.0.0` is blocked by tooling until `docs/verification/runtime-1.0.0.json` records a
   complete isolated-IDE run of the exact stable ZIP (RELEASING.md). Never invent it.
 - Remote settings (2026-09-08): squash-only merges, protected `master` requiring PRs and both
@@ -113,5 +112,6 @@ Production Java is under `src/io/github/byscrimm/yii2insight/`; extension regist
   automated.
 - Roadmap order: SQL aliases/attributes, asArray result keys, controller-to-view flow,
   config merging/DI, routes/i18n, indexing/performance. See `DEVELOPMENT_PLAN.md`.
-- Next for stable 1.0.0: set version 1.0.0 on a release branch, test that exact CI ZIP in the
-  isolated IDE (fixtures in build/ide-runtime-claude/project/scenarios), add runtime evidence, tag.
+- Next for stable 1.0.0: take the ZIP from the `release/1.0.0` PR CI artifact, test it in the isolated IDE
+  (fixtures in build/ide-runtime-claude/project/scenarios), add `docs/verification/runtime-1.0.0.json`, merge, tag.
+  Evidence must match the tag build byte for byte; any `resources/` or source change after testing means retesting.

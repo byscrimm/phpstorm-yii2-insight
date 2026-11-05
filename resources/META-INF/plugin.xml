@@ -19,7 +19,7 @@
 <p><a href="https://github.com/byscrimm/phpstorm-yii2-insight">Source and documentation</a> · <a href="https://github.com/byscrimm/phpstorm-yii2-insight/blob/master/LICENSE.md">License</a> · <a href="https://github.com/byscrimm/phpstorm-yii2-insight/blob/master/CHANGELOG.md">Changelog</a></p>
     ]]></description>
 
-    <change-notes><![CDATA[<b>1.0.0-rc.8 — second Yii2 Insight pre-release</b><br/>Adds SQL alias and alias.attribute completion, asArray() row keys, named/compact/variable render parameters with a settings-independent view index, required component files, Yii::$app->get() and DI types, controllerMap/REST routes, configured message sources with message navigation and ICU checks, and cancellable migrations. Isolated-IDE scenarios are pending; bugs may remain. Please report issues on GitHub.]]></change-notes>
+    <change-notes><![CDATA[<b>1.0.0 — first stable Yii2 Insight release</b><br/>ActiveRecord relations with navigation, Find Usages and Rename; SQL alias and alias.attribute completion; asArray() row keys; GridView/DetailView attributes; named/compact/variable render parameters with a settings-independent view index; required component files, Yii::$app->get() and DI types; controllerMap/REST routes; configured message sources with message navigation and ICU checks; cancellable migrations. Please report issues on GitHub.]]></change-notes>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->

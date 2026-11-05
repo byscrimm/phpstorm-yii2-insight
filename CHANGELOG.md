@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.0.0
+
+First stable version of **Yii2 Insight**, an independent community fork maintained by **by_scrimm**. Requires PhpStorm **2026.2.2** (build 262.10315.130) or later within the 2026.2 branch.
+
+### Added and improved in Yii2 Insight
+- ActiveRecord relation completion in with, joinWith, innerJoinWith, getRelation and via, including nested paths, JOIN aliases, callback keys, named arguments and supported local query variables.
+- Navigate relation segments to getters; Find Usages from getters/PHPDoc includes model-matched relation strings. Rename from declarations coordinates the getter, local PHPDoc property and usages with preview; Rename from strings is blocked.
+- Missing relation PHPDoc inspection on class documentation/name and getter, with actions to add one or all missing local relations. Getter-only relations use @property-read; confirmed hasOne/hasMany targets receive nullable/array model types. Existing documentation is preserved.
+- GridView/DetailView model and attribute resolution, nested relation attributes, attribute:format:label handling, filter-model separation and first value-callback parameter inference.
+- More conservative handling of aliases, components, routes, translations, SQL parameters, local values and asArray(false); migration lifecycle/cancellation improvements.
+- Independent plugin ID, settings and inspection identifiers; modern 262/Java 25 integration, regression suites, reproducible packaging and verification workflows.
+
+### Retained from upstream
+- View/template completion and navigation, view and parameter inspections/quick fixes, config-array/object-factory completion, forms/model rules and labels, database-assisted completion/inspections, translation and route support, and migration UI/commands.
+- Original BSD license, source attribution and upstream history.
+
+### Compatibility and usage
+- Separate plugin identity: legacy settings are not automatically imported; conflicting Yii2 support plugins must not be enabled together.
+- Static analysis runs locally without an AI account or API key. Database features require an IDE datasource; migration commands run only when explicitly invoked.
+- Main workflows were manually exercised in isolated PhpStorm 2026.2.2 during release-candidate testing. Bugs may remain; please report reproducible problems through GitHub Issues.
+- Dynamic PHP, arbitrary query/provider factories and some inherited/refactoring edge cases may remain unresolved. SQL-alias column completion and selected asArray result-key inference are planned, not included.
+
+### Included from 1.0.0-rc.7 and 1.0.0-rc.8
+
+Indexes are rebuilt once after updating from a version before 1.0.0-rc.8 (view index 35, components index 8).
+
+- Query builder completion offers explicit table aliases and documented `alias.attribute` columns in `where`, `andWhere`, `orWhere`, `having`, `andHaving`, `select`, `addSelect`, `orderBy`, `addOrderBy`, `groupBy` and `addGroupBy`. Aliases come from `alias()`, `joinWith('relation alias')` / `AS` and `alias()` inside `joinWith()` callbacks; joined models are taken from relation declarations. Conflicting or dynamic aliases, unknown query methods and subqueries are not guessed. Relation properties and getters are not offered as columns.
+- `$row['…']` completion for `asArray()->one()` / `asArray()->all()` rows, through local variables, `$rows[0]` and `foreach`. Keys come from `select`/`addSelect` (renamed columns, `alias.column`, `*`, `alias.*`) or documented model columns, plus first-level eager relations as nested rows, honouring `select`/`addSelect` inside the relation callback. `asArray(false)`, dynamic `select`/`asArray`, reassigned values and unknown query methods yield no keys; value types are not inferred.
+- View inspections, navigation and PHPDoc fixes read render parameters from named arguments (`params:`, `view:`), `compact()` and an unmodified local array variable. Incomplete parameter sets (dynamic keys, spreads, function results, changed variables) are not diagnosed; parameters held in a variable get no quick fix and no unused warnings. Adding and removing parameters keeps other arguments and comments, including named `params:`.
+- The view index no longer depends on project settings: view keys, applications and themes are resolved at query time (index version 35), so changing the Yii root or theme path map takes effect without an index rebuild.
+- Components defined in a statically required file (`'components' => require __DIR__ . '/components.php'`, also inside `ArrayHelper::merge` and with `dirname(__DIR__, n)`) are completed and typed for `Yii::$app`. `Yii::$app->get('name')` returns the component type. Container definitions (`container.definitions/singletons`, `Yii::$container->set/setSingleton` in config) add the implementation type to `Yii::createObject(X::class)` and `Yii::$container->get(X::class)`.
+- Fixed: string class names with escaped backslashes (`'app\\models\\User'`) and component factories written as closures are now resolved (components index version 8).
+- Routes include `controllerMap` entries from config and external actions inherited through `parent::actions()` with `unset`/added ids (REST `ActiveController`).
+- Translations follow configured `i18n.translations` PhpMessageSource `basePath` and `fileMap` and list the application `language` first. Ctrl+Click on a `Yii::t()` message opens its entries in all locales. New inspections: ICU placeholder/parameter mismatch (enabled) and a missing message with a fix adding it to all category files (disabled by default).
+- Migrations run as a cancellable background task; cancelling stops the yii process, and a non-zero exit code is shown in the console and used for migration status.
+- `Yii::createObject()` type resolution no longer runs type inference inside the type provider's `getType`.
+- `foreach` over `ActiveQuery::each()` yields the model and over `batch()` yields model arrays; array mode is left to the native provider.
+- View index stores strings as UTF-8 (index version 34); view paths outside the Yii root no longer match by prefix.
+- View-file rename keeps references as smart pointers and edits them through PSI manipulators.
+- `Yii::$app` component types are not resolved during indexing (dumb mode).
+- Relation completion and navigation resolve the model through parentheses, e.g. `(new City())->getRelation('')`.
+
 ## 1.0.0-rc.8
 
 Second public pre-release. It contains 1.0.0-rc.7 plus the roadmap stages below
@@ -29,29 +71,6 @@ ZIP are still pending; the stable 1.0.0 release follows after they pass.
 - View-file rename keeps references as smart pointers and edits them through PSI manipulators.
 - `Yii::$app` component types are not resolved during indexing (dumb mode).
 - Relation completion and navigation resolve the model through parentheses, e.g. `(new City())->getRelation('')`.
-
-## 1.0.0
-
-First stable version of **Yii2 Insight**, an independent community fork maintained by **by_scrimm**. Requires PhpStorm **2026.2.2** (build 262.10315.130) or later within the 2026.2 branch.
-
-### Added and improved in Yii2 Insight
-- ActiveRecord relation completion in with, joinWith, innerJoinWith, getRelation and via, including nested paths, JOIN aliases, callback keys, named arguments and supported local query variables.
-- Navigate relation segments to getters; Find Usages from getters/PHPDoc includes model-matched relation strings. Rename from declarations coordinates the getter, local PHPDoc property and usages with preview; Rename from strings is blocked.
-- Missing relation PHPDoc inspection on class documentation/name and getter, with actions to add one or all missing local relations. Getter-only relations use @property-read; confirmed hasOne/hasMany targets receive nullable/array model types. Existing documentation is preserved.
-- GridView/DetailView model and attribute resolution, nested relation attributes, attribute:format:label handling, filter-model separation and first value-callback parameter inference.
-- More conservative handling of aliases, components, routes, translations, SQL parameters, local values and asArray(false); migration lifecycle/cancellation improvements.
-- Independent plugin ID, settings and inspection identifiers; modern 262/Java 25 integration, regression suites, reproducible packaging and verification workflows.
-
-### Retained from upstream
-- View/template completion and navigation, view and parameter inspections/quick fixes, config-array/object-factory completion, forms/model rules and labels, database-assisted completion/inspections, translation and route support, and migration UI/commands.
-- Original BSD license, source attribution and upstream history.
-
-### Compatibility and usage
-- Separate plugin identity: legacy settings are not automatically imported; conflicting Yii2 support plugins must not be enabled together.
-- Static analysis runs locally without an AI account or API key. Database features require an IDE datasource; migration commands run only when explicitly invoked.
-- Main workflows were manually exercised in isolated PhpStorm 2026.2.2 during release-candidate testing. Bugs may remain; please report reproducible problems through GitHub Issues.
-- Dynamic PHP, arbitrary query/provider factories and some inherited/refactoring edge cases may remain unresolved. SQL-alias column completion and selected asArray result-key inference are planned, not included.
-
 
 ## 1.0.0-rc.6
 
